@@ -1,5 +1,5 @@
-const STATIC_CACHE = "showrunner-static-v3";
-const RUNTIME_CACHE = "showrunner-runtime-v3";
+const STATIC_CACHE = "showrunner-static-v4";
+const RUNTIME_CACHE = "showrunner-runtime-v4";
 const CORE_ASSETS = [
   "./",
   "./index.html",

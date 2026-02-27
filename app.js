@@ -422,12 +422,10 @@ function init() {
     });
     state.rubric = migratedRubric;
   }
-  applyVisualSettings(loadVisualSettings());
   bindTabbar();
   renderMetaFields();
   renderTimeline();
   bindGlobalControls();
-  initVisualControls();
   initMaterialsLibrary();
   registerServiceWorker();
   renderPhaseNav();

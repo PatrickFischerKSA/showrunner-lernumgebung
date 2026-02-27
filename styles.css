@@ -1,6 +1,6 @@
 :root {
   --bg: #06141a;
-  --card-alpha: 0.42;
+  --card-alpha: 0.58;
   --ink: #edf3ef;
   --muted: #c2cec8;
   --line: rgba(210, 226, 219, 0.2);
@@ -8,11 +8,6 @@
   --accent-2: #9dd99a;
   --danger: #ff7a5b;
   --shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
-  --video-blur: 0.45px;
-  --video-brightness: 1.48;
-  --video-saturate: 1.35;
-  --vignette-opacity: 0.05;
-  --gradient-opacity: 0.03;
 }
 
 * {
@@ -25,7 +20,9 @@ body {
   min-height: 100%;
   font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
   color: var(--ink);
-  background: var(--bg);
+  background: radial-gradient(circle at 15% 10%, rgba(255, 179, 71, 0.1), transparent 42%),
+    radial-gradient(circle at 82% 82%, rgba(157, 217, 154, 0.1), transparent 42%),
+    var(--bg);
 }
 
 h1,
@@ -38,35 +35,6 @@ h3 {
 
 a {
   color: var(--accent);
-}
-
-.bg-video {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: blur(var(--video-blur)) saturate(var(--video-saturate)) brightness(var(--video-brightness));
-  transform: scale(1.05);
-  z-index: -3;
-}
-
-.bg-vignette {
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(circle at 20% 15%, rgba(255, 179, 71, 0.14), transparent 44%),
-    radial-gradient(circle at 82% 85%, rgba(157, 217, 154, 0.17), transparent 44%),
-    radial-gradient(circle at 50% 50%, rgba(2, 8, 11, 0.07), rgba(2, 8, 11, 0.3));
-  opacity: var(--vignette-opacity);
-  z-index: -2;
-}
-
-.bg-gradient {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(110deg, rgba(1, 9, 13, 0.34) 0%, rgba(5, 16, 22, 0.22) 45%, rgba(2, 8, 13, 0.38) 100%);
-  opacity: var(--gradient-opacity);
-  z-index: -1;
 }
 
 .app-shell {
@@ -104,43 +72,27 @@ a {
   gap: 0.55rem;
 }
 
-.view-controls {
-  margin-top: 0.85rem;
-  display: grid;
-  gap: 0.55rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.hero-film {
+  margin: 1rem 0 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.65rem;
+  background: rgba(1, 10, 14, 0.4);
 }
 
-.view-control {
-  background: rgba(1, 9, 12, 0.45);
-  border: 1px solid rgba(210, 226, 219, 0.18);
+.hero-film figcaption {
+  margin-bottom: 0.45rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.hero-film video {
+  width: 100%;
+  display: block;
   border-radius: 10px;
-  padding: 0.5rem 0.6rem;
-}
-
-.control-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.6rem;
-  align-items: center;
-  font-size: 0.94rem;
-}
-
-.control-head strong {
-  color: var(--accent-2);
-  font-variant-numeric: tabular-nums;
-}
-
-.view-presets {
-  margin-top: 0.55rem;
-  display: grid;
-  gap: 0.55rem;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.view-help {
-  margin-top: 0.55rem;
-  font-size: 0.84rem;
+  border: 1px solid rgba(210, 226, 219, 0.2);
+  max-height: 340px;
+  object-fit: cover;
 }
 
 .tabbar {
@@ -585,14 +537,6 @@ button.ghost {
   .button-row,
   .button-col {
     flex-direction: column;
-  }
-
-  .view-controls {
-    grid-template-columns: 1fr;
-  }
-
-  .view-presets {
-    grid-template-columns: 1fr;
   }
 
   .phase-meta {

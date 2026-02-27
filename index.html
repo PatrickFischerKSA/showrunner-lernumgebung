@@ -7,12 +7,6 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <video class="bg-video" autoplay muted loop playsinline>
-    <source src="./assets/jenny_background.mp4" type="video/mp4">
-  </video>
-  <div class="bg-vignette" aria-hidden="true"></div>
-  <div class="bg-gradient" aria-hidden="true"></div>
-
   <main class="app-shell">
     <header class="hero">
       <p class="kicker">Digitale Lernumgebung</p>
@@ -23,24 +17,13 @@
         <button type="button" id="import-all-json">Gesamtprojekt importieren</button>
         <button type="button" id="export-dossier-md">Dossier als Markdown</button>
       </div>
-      <div class="view-controls">
-        <label class="view-control">
-          <span class="control-head">Filmsichtbarkeit <strong id="bg-visibility-value">88%</strong></span>
-          <input id="bg-visibility" type="range" min="30" max="100" step="1" value="88">
-        </label>
-        <label class="view-control">
-          <span class="control-head">Textlesbarkeit der Karten <strong id="card-opacity-value">58%</strong></span>
-          <input id="card-opacity" type="range" min="25" max="92" step="1" value="58">
-        </label>
-      </div>
-      <div class="view-presets">
-        <button type="button" class="ghost" id="preset-film">Film stärker sichtbar</button>
-        <button type="button" class="ghost" id="preset-balanced">Ausgewogen</button>
-        <button type="button" class="ghost" id="preset-text">Text maximal lesbar</button>
-        <button type="button" id="reset-visuals">Zurücksetzen</button>
-      </div>
-      <p class="subtle view-help">Steuerung: Links = weniger, rechts = mehr. Presets setzen beide Regler gleichzeitig und sind die schnellste Variante.</p>
-      <p class="subtle view-help" id="view-state">Aktuell: Ausgewogen.</p>
+      <figure class="hero-film">
+        <figcaption>Arbeitsfilm: Jenny (visuelle Referenz für die Lernphasen)</figcaption>
+        <video controls autoplay muted loop playsinline preload="metadata">
+          <source src="./assets/jenny_background.mp4" type="video/mp4">
+          Dein Browser unterstützt dieses Videoformat nicht.
+        </video>
+      </figure>
     </header>
 
     <nav class="tabbar" aria-label="Hauptnavigation">

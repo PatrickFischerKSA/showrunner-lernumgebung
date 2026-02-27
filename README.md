@@ -26,13 +26,10 @@ Diese Lernumgebung ist als direkt deploybares Static-Webprojekt gebaut.
   - Teilschritt (pro Phase) als JSON
   - Einzelner Checkpoint als JSON
   - Dossier, Checkpoints und Pitch-Manuskript als Markdown
-- Geblurrter Videohintergrund (`assets/jenny_background.mp4`)
+- Integriertes Arbeitsvideo (`assets/jenny_background.mp4`) zwischen Exportzeile und Tab-Navigation
 - Integriertes Anleitungsvideo (`assets/tv-schreibmaschine-anleitung.mp4`)
 - Integrierte Wissensbasis: Filmpuls, WikiHow und `assets/Serienschreiben.pdf`
-- Hintergrundsteuerung in der UI:
-  - Sichtbarkeit des Videos (Helligkeit/Overlay)
-  - Transparenz der Karten
-  - Transparente Eingabefelder fuer direkte Arbeit auf dem Filmhintergrund
+- Transparente Eingabefelder fuer direkte Arbeit mit sichtbarem Bewegtbildkontext
 - Materialbibliothek:
   - Dateien per IndexedDB dauerhaft speichern
   - Persistenz anfragen (`navigator.storage.persist()`)
@@ -46,7 +43,7 @@ Diese Lernumgebung ist als direkt deploybares Static-Webprojekt gebaut.
 - `index.html` UI-Struktur
 - `styles.css` Design, Responsive Layout, Motion
 - `app.js` gesamte Logik (State, Rendering, Import/Export)
-- `assets/jenny_background.mp4` Hintergrundvideo
+- `assets/jenny_background.mp4` integriertes Arbeitsvideo im Header
 - `assets/jenny_text_excerpt.txt` Starttextauszug
 - `sw.js` statisches Offline-Caching
 
