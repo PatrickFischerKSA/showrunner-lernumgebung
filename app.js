@@ -389,6 +389,7 @@ const VISUAL_TERMS = ["kamera", "nahaufnahme", "totale", "achsbruch", "push-in",
 const COLLAB_TERMS = ["showrunner", "head of story", "character lead", "visual lead", "writer", "rolle", "feedback", "abgabe", "verantwortung", "team"];
 const SCRIPT_TERMS = ["premisse", "expose", "treatment", "outline", "3-akt", "plot", "subtext", "show", "dont", "tell", "szene", "dialog"];
 const CURRENT_TERMS = ["heute", "aktuell", "gegenwart", "heutigen", "gesellschaft", "zeitgenoessisch", "jetzt"];
+const FILLER_TOKENS = new Set(["bla", "blabla", "blablabla", "foo", "bar", "lorem", "ipsum", "test", "asdf", "qwer", "xyz", "abc"]);
 
 let state = loadState() || createInitialState();
 let activeTab = "dashboard";
@@ -399,10 +400,28 @@ let qaSeconds = 300;
 let pitchInterval = null;
 let qaInterval = null;
 let materialDb = null;
+let localizedTextsReady = false;
 
 init();
 
 function init() {
+  if (!localizedTextsReady) {
+    localizeSystemTexts();
+    localizedTextsReady = true;
+  }
+  if (state && state.meta && typeof state.meta.projectIdea === "string") {
+    state.meta.projectIdea = toGermanDisplay(state.meta.projectIdea);
+  }
+  if (state && state.rubric && typeof state.rubric === "object") {
+    const migratedRubric = {};
+    Object.entries(state.rubric).forEach(([key, value]) => {
+      migratedRubric[toGermanDisplay(key)] = value;
+    });
+    RUBRIC.forEach((criterion) => {
+      if (!(criterion in migratedRubric)) migratedRubric[criterion] = 0;
+    });
+    state.rubric = migratedRubric;
+  }
   applyVisualSettings(loadVisualSettings());
   bindTabbar();
   renderMetaFields();
@@ -419,6 +438,40 @@ function init() {
   renderRubric();
   updateProgress();
   loadTextExcerpt();
+}
+
+function localizeSystemTexts() {
+  const targets = [
+    META_FIELDS,
+    PROJECT_IDEAS,
+    TIMELINE,
+    PHASES,
+    CHECKPOINTS,
+    CHECKPOINT_FIELDS,
+    DECISION_LEVELS,
+    PITCH_FIELDS,
+    RUBRIC,
+    SELF_FIELDS,
+    FEEDBACK_SOURCES
+  ];
+  targets.forEach((target) => applyGermanTypography(target));
+}
+
+function applyGermanTypography(value) {
+  if (typeof value === "string") return toGermanDisplay(value);
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i += 1) {
+      value[i] = applyGermanTypography(value[i]);
+    }
+    return value;
+  }
+  if (value && typeof value === "object") {
+    Object.keys(value).forEach((key) => {
+      if (key === "key" || key === "id") return;
+      value[key] = applyGermanTypography(value[key]);
+    });
+  }
+  return value;
 }
 
 function createInitialState() {
@@ -492,7 +545,7 @@ function renderMetaFields() {
   box.innerHTML = "";
   META_FIELDS.forEach((field) => {
     const label = document.createElement("label");
-    label.textContent = field.label;
+    label.textContent = toGermanDisplay(field.label);
 
     let input;
     if (field.type === "select") {
@@ -500,23 +553,23 @@ function renderMetaFields() {
       PROJECT_IDEAS.forEach((idea) => {
         const option = document.createElement("option");
         option.value = idea;
-        option.textContent = idea;
+        option.textContent = toGermanDisplay(idea);
         input.appendChild(option);
       });
     } else {
       input = document.createElement("input");
       input.type = field.type;
-      if (field.placeholder) input.placeholder = field.placeholder;
+      if (field.placeholder) input.placeholder = toGermanDisplay(field.placeholder);
     }
 
     input.value = state.meta[field.key] || "";
     input.dataset.meta = field.key;
     input.dataset.fieldKey = field.key;
-    input.dataset.fieldLabel = field.label;
+    input.dataset.fieldLabel = toGermanDisplay(field.label);
     input.dataset.feedbackContext = "meta";
     input.addEventListener("input", onMetaChange);
     label.appendChild(input);
-    label.appendChild(createFeedbackNode(buildFieldFeedback(field.key, field.label, String(input.value || ""), "meta")));
+    label.appendChild(createFeedbackNode(buildFieldFeedback(field.key, toGermanDisplay(field.label), String(input.value || ""), "meta")));
     box.appendChild(label);
   });
 
@@ -546,7 +599,7 @@ function onMetaChange(event) {
 
 function renderTimeline() {
   const list = document.getElementById("timeline");
-  list.innerHTML = TIMELINE.map((entry) => `<li>${entry}</li>`).join("");
+  list.innerHTML = TIMELINE.map((entry) => `<li>${escapeHtml(toGermanDisplay(entry))}</li>`).join("");
 }
 
 function renderPhaseNav() {
@@ -554,7 +607,7 @@ function renderPhaseNav() {
   const rows = PHASES.map((phase) => {
     const score = countPhaseCompletion(phase.id);
     const activeClass = phase.id === activePhase ? "active" : "";
-    return `<button class="phase-link ${activeClass}" data-phase-nav="${phase.id}">${phase.title}<br><small>${score.done}/${score.total} erledigt</small></button>`;
+    return `<button class="phase-link ${activeClass}" data-phase-nav="${phase.id}">${escapeHtml(toGermanDisplay(phase.title))}<br><small>${score.done}/${score.total} erledigt</small></button>`;
   }).join("");
 
   nav.innerHTML = `<h2>Lernphasen</h2><p class="subtle">Vom Text bis zum Pitch in kleinteiligen Schritten.</p>${rows}`;
@@ -577,13 +630,13 @@ function renderPhaseContent() {
     .map(
       (field) => `
       <label>
-        ${field.label}
+        ${escapeHtml(toGermanDisplay(field.label))}
         <textarea data-phase-field="${phase.id}" data-field-key="${field.key}" data-field-label="${escapeHtml(
-          field.label
-        )}" data-feedback-context="phase" placeholder="${field.placeholder || ""}">${escapeHtml(
+          toGermanDisplay(field.label)
+        )}" data-feedback-context="phase" placeholder="${escapeHtml(toGermanDisplay(field.placeholder || ""))}">${escapeHtml(
         phaseState.fields[field.key] || ""
       )}</textarea>
-        ${renderFieldFeedbackHTML(field.key, field.label, phaseState.fields[field.key] || "", "phase")}
+        ${renderFieldFeedbackHTML(field.key, toGermanDisplay(field.label), phaseState.fields[field.key] || "", "phase")}
       </label>
     `
     )
@@ -596,31 +649,31 @@ function renderPhaseContent() {
           const prefix = level === "basis" ? "b" : level === "standard" ? "s" : "e";
           const taskId = `${prefix}${idx}`;
           const checked = phaseState.tasks[level][taskId] ? "checked" : "";
-          return `<label><input type="checkbox" data-phase-task="${phase.id}" data-task-level="${level}" data-task-id="${taskId}" ${checked}> ${task}</label>`;
+          return `<label><input type="checkbox" data-phase-task="${phase.id}" data-task-level="${level}" data-task-id="${taskId}" ${checked}> ${escapeHtml(toGermanDisplay(task))}</label>`;
         })
         .join("");
-      return `<div class="task-box"><h3>${capitalize(level)}</h3>${items}</div>`;
+      return `<div class="task-box"><h3>${escapeHtml(toGermanDisplay(capitalize(level)))}</h3>${items}</div>`;
     })
     .join("");
 
   const selfHtml = SELF_FIELDS.map(
     (field) => `
     <label>
-      ${field.label}
+      ${escapeHtml(toGermanDisplay(field.label))}
       <textarea data-phase-self="${phase.id}" data-self-key="${field.key}" data-field-label="${escapeHtml(
-        field.label
+        toGermanDisplay(field.label)
       )}" data-feedback-context="self">${escapeHtml(phaseState.self[field.key] || "")}</textarea>
-      ${renderFieldFeedbackHTML(field.key, field.label, phaseState.self[field.key] || "", "self")}
+      ${renderFieldFeedbackHTML(field.key, toGermanDisplay(field.label), phaseState.self[field.key] || "", "self")}
     </label>
   `
   ).join("");
 
   content.innerHTML = `
-    <h2>${phase.title}</h2>
+    <h2>${escapeHtml(toGermanDisplay(phase.title))}</h2>
     <div class="phase-meta">
-      <div class="meta-chip"><strong>Ziel</strong><br>${phase.goal}</div>
-      <div class="meta-chip"><strong>Output</strong><br>${phase.output}</div>
-      <div class="meta-chip"><strong>Zeitrahmen</strong><br>${phase.time}</div>
+      <div class="meta-chip"><strong>Ziel</strong><br>${escapeHtml(toGermanDisplay(phase.goal))}</div>
+      <div class="meta-chip"><strong>Output</strong><br>${escapeHtml(toGermanDisplay(phase.output))}</div>
+      <div class="meta-chip"><strong>Zeitrahmen</strong><br>${escapeHtml(toGermanDisplay(phase.time))}</div>
     </div>
     <div class="field-grid">${fieldHtml}</div>
     ${taskHtml}
@@ -693,13 +746,13 @@ function renderCheckpoints() {
     const fields = CHECKPOINT_FIELDS.map(
       (field) => `
       <label>
-        ${field.label}
+        ${escapeHtml(toGermanDisplay(field.label))}
         <textarea data-checkpoint-index="${index}" data-checkpoint-key="${field.key}" data-field-label="${escapeHtml(
-          field.label
+          toGermanDisplay(field.label)
         )}" data-feedback-context="checkpoint">${escapeHtml(
         state.checkpoints[index][field.key] || ""
       )}</textarea>
-        ${renderFieldFeedbackHTML(field.key, field.label, state.checkpoints[index][field.key] || "", "checkpoint")}
+        ${renderFieldFeedbackHTML(field.key, toGermanDisplay(field.label), state.checkpoints[index][field.key] || "", "checkpoint")}
       </label>
     `
     ).join("");
@@ -707,7 +760,7 @@ function renderCheckpoints() {
     return `
       <article class="checkpoint-card">
         <div class="checkpoint-head">
-          <h3>${title}</h3>
+          <h3>${escapeHtml(toGermanDisplay(title))}</h3>
           <div class="button-row">
             <button type="button" data-cp-action="export" data-cp-index="${index}">Export</button>
             <button type="button" class="ghost" data-cp-action="import" data-cp-index="${index}">Import</button>
@@ -751,7 +804,8 @@ function renderCheckpoints() {
 function renderDecision() {
   const select = document.getElementById("symptom-select");
   select.innerHTML = DECISION_LEVELS.map(
-    (entry) => `<option value="${entry.id}" ${entry.id === state.decision.selected ? "selected" : ""}>${entry.symptom}</option>`
+    (entry) =>
+      `<option value="${entry.id}" ${entry.id === state.decision.selected ? "selected" : ""}>${escapeHtml(toGermanDisplay(entry.symptom))}</option>`
   ).join("");
 
   select.onchange = () => {
@@ -766,12 +820,12 @@ function renderDecision() {
 function paintDecisionCard() {
   const entry = DECISION_LEVELS.find((item) => item.id === state.decision.selected) || DECISION_LEVELS[0];
   const box = document.getElementById("decision-card");
-  const questions = entry.questions.map((question) => `<li>${question}</li>`).join("");
+  const questions = entry.questions.map((question) => `<li>${escapeHtml(toGermanDisplay(question))}</li>`).join("");
 
   box.innerHTML = `
-    <p><strong>${entry.level}</strong></p>
+    <p><strong>${escapeHtml(toGermanDisplay(entry.level))}</strong></p>
     <ul>${questions}</ul>
-    <p><strong>Massnahme:</strong> ${entry.measure}</p>
+    <p><strong>Maßnahme:</strong> ${escapeHtml(toGermanDisplay(entry.measure))}</p>
     <label>
       Team-Notizen zur Diagnose
       <textarea id="decision-notes" data-field-key="decisionNotes" data-field-label="Team-Notizen zur Diagnose" data-feedback-context="decision">${escapeHtml(
@@ -806,11 +860,11 @@ function renderPitchFields() {
   box.innerHTML = PITCH_FIELDS.map(
     (field) => `
     <label>
-      ${field.label}
-      <textarea data-pitch-key="${field.key}" data-field-label="${escapeHtml(field.label)}" data-feedback-context="pitch">${escapeHtml(
+      ${escapeHtml(toGermanDisplay(field.label))}
+      <textarea data-pitch-key="${field.key}" data-field-label="${escapeHtml(toGermanDisplay(field.label))}" data-feedback-context="pitch">${escapeHtml(
         state.pitch[field.key] || ""
       )}</textarea>
-      ${renderFieldFeedbackHTML(field.key, field.label, state.pitch[field.key] || "", "pitch")}
+      ${renderFieldFeedbackHTML(field.key, toGermanDisplay(field.label), state.pitch[field.key] || "", "pitch")}
     </label>
   `
   ).join("");
@@ -835,7 +889,7 @@ function renderRubric() {
     const value = Number(state.rubric[criterion] || 0);
     return `
       <div class="rubric-row">
-        <h3>${criterion}</h3>
+        <h3>${escapeHtml(toGermanDisplay(criterion))}</h3>
         <label>
           <input type="range" min="0" max="5" step="1" value="${value}" data-rubric="${criterion}">
         </label>
@@ -1477,14 +1531,14 @@ function buildFeedbackInnerHTML(analysis) {
   const checksHtml = analysis.checks
     .map((check) => {
       const marker = check.pass ? "[OK]" : "[!]";
-      return `<li>${marker} <strong>${escapeHtml(check.title)}:</strong> ${escapeHtml(check.detail)}</li>`;
+      return `<li>${marker} <strong>${escapeHtml(toGermanDisplay(check.title))}:</strong> ${escapeHtml(toGermanDisplay(check.detail))}</li>`;
     })
     .join("");
 
   const nextSteps =
     analysis.nextSteps.length > 0
-      ? `<div class="af-next"><strong>Naechster Feinschliff:</strong> ${escapeHtml(analysis.nextSteps.join(" | "))}</div>`
-      : `<div class="af-next"><strong>Naechster Feinschliff:</strong> Feinschliff im Teamtest und laut vorlesen.</div>`;
+      ? `<div class="af-next"><strong>Nächster Feinschliff:</strong> ${escapeHtml(toGermanDisplay(analysis.nextSteps.join(" | ")))}</div>`
+      : `<div class="af-next"><strong>Nächster Feinschliff:</strong> Feinschliff im Teamtest und laut vorlesen.</div>`;
 
   const sourceText =
     analysis.sources.length > 0
@@ -1494,11 +1548,11 @@ function buildFeedbackInnerHTML(analysis) {
   return `
     <div class="af-head">
       <strong>Autofeedback: ${analysis.score}/100</strong>
-      <span>${analysis.levelLabel}</span>
+      <span>${toGermanDisplay(analysis.levelLabel)}</span>
     </div>
     <ul class="af-list">${checksHtml}</ul>
     ${nextSteps}
-    <div class="af-source">Basis: ${escapeHtml(sourceText)}</div>
+    <div class="af-source">Basis: ${escapeHtml(toGermanDisplay(sourceText))}</div>
   `;
 }
 
@@ -1549,7 +1603,8 @@ function buildFieldFeedback(fieldKey, fieldLabel, rawValue, context) {
       languageFailDetail,
       "kompendium",
       "Neu formulieren: Aussage + Begruendung + Konsequenz, keine Zufallssilben oder Keyboard-Muster.",
-      4
+      4,
+      true
     )
   );
 
@@ -1583,8 +1638,11 @@ function buildFieldFeedback(fieldKey, fieldLabel, rawValue, context) {
   checks.push(...buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words, context, language));
 
   let score = computeWeightedScore(checks);
+  const hasCriticalFailure = checks.some((check) => check.critical && !check.pass);
   if (language.isLikelyNonsense) score = Math.min(score, 12);
+  if (language.fillerTokenCount > 0) score = Math.min(score, 28);
   if (words < minWords) score = Math.min(score, context === "meta" ? 55 : 40);
+  if (hasCriticalFailure) score = Math.min(score, fieldKey === "projectTitle" ? 30 : 45);
 
   const level = score >= 80 ? "strong" : score >= 55 ? "medium" : "weak";
   const levelLabel = score >= 80 ? "hoch differenziert" : score >= 55 ? "ausbaufaehig" : "grundlegend nachschaerfen";
@@ -1608,6 +1666,26 @@ function getMinimumWords(fieldKey, context) {
   return 12;
 }
 
+function hasMeaningfulTitle(normalized, language) {
+  const tokens = tokenizeWords(normalized).filter((token) => /[a-zA-ZäöüÄÖÜß]/.test(token));
+  const meaningful = tokens.filter(
+    (token) =>
+      token.length >= 4 &&
+      !FILLER_TOKENS.has(token) &&
+      !COMMON_DE_WORDS.has(token) &&
+      !/^[a-z]{1,3}$/.test(token)
+  );
+
+  return (
+    tokens.length >= 2 &&
+    meaningful.length >= 1 &&
+    language.fillerTokenCount === 0 &&
+    language.maxTokenShare < 0.5 &&
+    language.uniqueRatio >= 0.6 &&
+    !language.isLikelyNonsense
+  );
+}
+
 function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words, context, language) {
   const checks = [];
   const matchedTheme = getMatchedTerms(normalized, THEME_TERMS);
@@ -1618,28 +1696,42 @@ function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words
 
   switch (fieldKey) {
     case "projectTitle":
-      checks.push(makeCheck(words >= 2 && words <= 10, "Titel-Schaerfe", "Titel ist knapp und fokussiert.", "Titel ist zu vage oder unklar.", "kompendium", "Einen klaren Konfliktbegriff im Titel verankern (2-10 Woerter).", 2));
+      checks.push(makeCheck(words >= 2 && words <= 10, "Titel-Schärfe", "Titel ist knapp und fokussiert.", "Titel ist zu vage oder zu kurz.", "kompendium", "Einen klaren Konfliktbegriff im Titel verankern (2-10 Wörter).", 3, true));
       checks.push(
         makeCheck(
           language.qualitySignal >= 60 && !language.isLikelyNonsense,
-          "Sprachliche Tragfaehigkeit",
-          "Titel ist sprachlich tragfaehig und praesentierbar.",
-          "Titel ist sprachlich nicht praesentierbar (Zufallsmuster/fehlende Semantik).",
+          "Sprachliche Tragfähigkeit",
+          "Titel ist sprachlich tragfähig und präsentierbar.",
+          "Titel ist sprachlich nicht präsentierbar (Zufallsmuster/fehlende Semantik).",
           "kompendium",
           "Titel als sinnvollen Satzkern mit Thema und Konflikt neu formulieren.",
-          3
+          4,
+          true
         )
       );
-      checks.push(makeCheck(matchedTheme.length >= 1 || hasAny(normalized, ["jenny", "meier", "1832"]), "Thematischer Anker", `Themenanker vorhanden (${matchedTheme.join(", ") || "JENNY-Kontext"}).`, "Themenanker fehlt.", "handbuch", "Mindestens ein Leitmotiv (z. B. Freiheit, Zugehoerigkeit, Macht) im Titel benennen.", 3));
+      checks.push(
+        makeCheck(
+          hasMeaningfulTitle(normalized, language),
+          "Semantische Dichte",
+          "Titel enthält einen tragfähigen Sinnkern.",
+          "Titel enthält keinen tragfähigen Sinnkern (Füllwörter/Wiederholung ohne Aussage).",
+          "kompendium",
+          "Mindestens ein sinntragendes Schlüsselwort plus konkrete Konfliktrichtung ergänzen.",
+          4,
+          true
+        )
+      );
+      checks.push(makeCheck(matchedTheme.length >= 1 || hasAny(normalized, ["jenny", "meier", "1832"]), "Thematischer Anker", `Themenanker vorhanden (${matchedTheme.join(", ") || "JENNY-Kontext"}).`, "Themenanker fehlt.", "handbuch", "Mindestens ein Leitmotiv (z. B. Freiheit, Zugehörigkeit, Macht) im Titel benennen.", 3, true));
       checks.push(
         makeCheck(
           !hasAny(normalized, ["asdf", "qwer", "lorem", "xxx", "testtest"]) && !language.hasKeyboardMash && language.gibberishTokenCount === 0,
-          "Glaubwuerdigkeit",
+          "Glaubwürdigkeit",
           "Kein Platzhalter- oder Zufallstitel erkannt.",
           "Titel enthaelt Platzhalter/Zufallsmuster oder sprachlich unplausible Token.",
           "kompendium",
           "Titel in bedeutungsvoller Sprache neu formulieren: Konflikt + Thema + Perspektive.",
-          4
+          4,
+          true
         )
       );
       break;
@@ -1809,11 +1901,18 @@ function analyzeLinguisticQuality(value, normalized) {
   const alphaTokens = tokens.filter((token) => /[a-zA-ZäöüÄÖÜß]/.test(token));
   const known = alphaTokens.filter((token) => isKnownWord(token));
   const knownRatio = alphaTokens.length ? known.length / alphaTokens.length : 0;
+  const uniqueRatio = alphaTokens.length ? new Set(alphaTokens).size / alphaTokens.length : 0;
   const avgLen = alphaTokens.length ? alphaTokens.reduce((sum, token) => sum + token.length, 0) / alphaTokens.length : 0;
   const longConsonant = alphaTokens.filter((token) => /[bcdfghjklmnpqrstvwxyz]{5,}/i.test(token)).length;
   const lowVowelTokens = alphaTokens.filter((token) => token.length >= 8 && countVowels(token) <= 2).length;
   const repeatedPatternTokens = alphaTokens.filter((token) => /(.)\1{2,}/.test(token) || /([a-z]{2,4})\1{1,}/i.test(token)).length;
   const keyboardMashTokens = alphaTokens.filter((token) => /(asdf|qwer|yxcv|sdfg|dfgh|fghj|ghjk|hjkl|jkl;|lkj)/i.test(token)).length;
+  const fillerTokenCount = alphaTokens.filter((token) => FILLER_TOKENS.has(token)).length;
+  const tokenCounts = alphaTokens.reduce((acc, token) => {
+    acc[token] = (acc[token] || 0) + 1;
+    return acc;
+  }, {});
+  const maxTokenShare = alphaTokens.length ? Math.max(...Object.values(tokenCounts)) / alphaTokens.length : 0;
   const gibberishTokenCount = alphaTokens.filter((token) => {
     if (isKnownWord(token)) return false;
     return token.length >= 7 && (countVowels(token) <= 2 || /[bcdfghjklmnpqrstvwxyz]{4,}/i.test(token));
@@ -1829,6 +1928,9 @@ function analyzeLinguisticQuality(value, normalized) {
     nonsenseSignals.push("vokalarmes Tokenmuster");
   }
   if (repeatedPatternTokens >= 1) nonsenseSignals.push("Wortmuster-Wiederholung");
+  if (fillerTokenCount >= Math.max(1, Math.ceil(alphaTokens.length * 0.34))) nonsenseSignals.push("Füllwörter ohne Inhalt");
+  if (maxTokenShare >= 0.5 && alphaTokens.length >= 3) nonsenseSignals.push("starke Wortwiederholung");
+  if (uniqueRatio < 0.55 && alphaTokens.length >= 4) nonsenseSignals.push("geringe Lexik-Diversität");
   if (longConsonant >= Math.ceil(Math.max(alphaTokens.length, 1) * 0.5) && alphaTokens.length >= 2) {
     nonsenseSignals.push("lange Konsonantenketten");
   }
@@ -1837,9 +1939,11 @@ function analyzeLinguisticQuality(value, normalized) {
   const isLikelyNonsense =
     alphaTokens.length >= 2 &&
     (keyboardMashTokens >= 1 ||
+      fillerTokenCount >= Math.max(1, Math.ceil(alphaTokens.length * 0.34)) ||
+      maxTokenShare >= 0.6 ||
       (knownRatio === 0 && gibberishTokenCount >= 1) ||
       (suspiciousRatio >= 0.6 && knownRatio < 0.2 && !hasVerbHint) ||
-      (nonsenseSignals.length >= 3 && avgLen > 6));
+      (nonsenseSignals.length >= 3 && (avgLen > 5 || uniqueRatio < 0.6)));
 
   const qualitySignal = Math.max(
     0,
@@ -1847,6 +1951,9 @@ function analyzeLinguisticQuality(value, normalized) {
       100 -
         (gibberishTokenCount * 18 +
           keyboardMashTokens * 30 +
+          fillerTokenCount * 24 +
+          (maxTokenShare >= 0.5 ? 22 : 0) +
+          (uniqueRatio < 0.55 ? 18 : 0) +
           repeatedPatternTokens * 12 +
           Math.max(0, 35 - Math.round(knownRatio * 100)) +
           (sentenceCount <= 1 && !hasVerbHint ? 12 : 0))
@@ -1861,6 +1968,9 @@ function analyzeLinguisticQuality(value, normalized) {
     sentenceCount,
     hasVerbHint,
     hasKeyboardMash: keyboardMashTokens > 0,
+    fillerTokenCount,
+    maxTokenShare,
+    uniqueRatio,
     gibberishTokenCount,
     nonsenseSignals,
     qualitySignal,
@@ -1869,7 +1979,16 @@ function analyzeLinguisticQuality(value, normalized) {
 }
 
 function isKnownWord(token) {
-  return COMMON_DE_WORDS.has(token) || THEME_TERMS.includes(token) || CONFLICT_TERMS.includes(token) || SERIAL_TERMS.includes(token) || VISUAL_TERMS.includes(token) || SCRIPT_TERMS.includes(token) || COLLAB_TERMS.includes(token) || PROJECT_IDEAS.some((idea) => idea.toLowerCase().includes(token));
+  return (
+    COMMON_DE_WORDS.has(token) ||
+    THEME_TERMS.includes(token) ||
+    CONFLICT_TERMS.includes(token) ||
+    SERIAL_TERMS.includes(token) ||
+    VISUAL_TERMS.includes(token) ||
+    SCRIPT_TERMS.includes(token) ||
+    COLLAB_TERMS.includes(token) ||
+    PROJECT_IDEAS.some((idea) => normalizeForCheck(idea).includes(token))
+  );
 }
 
 function tokenizeWords(normalized) {
@@ -1877,6 +1996,20 @@ function tokenizeWords(normalized) {
     .split(/\s+/)
     .map((token) => token.trim())
     .filter(Boolean);
+}
+
+function toGermanDisplay(value) {
+  return String(value || "")
+    .replace(/Ae/g, "Ä")
+    .replace(/Oe/g, "Ö")
+    .replace(/Ue/g, "Ü")
+    .replace(/ae/g, "ä")
+    .replace(/oe/g, "ö")
+    .replace(/ue/g, (match, offset, input) => {
+      const prev = offset > 0 ? input[offset - 1] : "";
+      if (/[qQ]/.test(prev)) return "ue";
+      return "ü";
+    });
 }
 
 function countVowels(token) {
@@ -1900,20 +2033,25 @@ function computeWeightedScore(checks) {
   return Math.round((done / Math.max(total, 1)) * 100);
 }
 
-function makeCheck(pass, title, detailPass, detailFail, source, fix, weight = 1) {
+function makeCheck(pass, title, detailPass, detailFail, source, fix, weight = 1, critical = false) {
   return {
     pass,
     title,
     detail: pass ? detailPass : detailFail,
     source,
     fix,
-    weight
+    weight,
+    critical
   };
 }
 
 function normalizeForCheck(value) {
   return String(value || "")
     .toLowerCase()
+    .replaceAll("ä", "ae")
+    .replaceAll("ö", "oe")
+    .replaceAll("ü", "ue")
+    .replaceAll("ß", "ss")
     .replace(/[^\p{L}\p{N}\s.\-?!]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -2031,12 +2169,12 @@ function updateProgress() {
   document.getElementById("progress-fill").style.width = `${pct}%`;
 
   document.getElementById("stats").innerHTML = `
-    <li>Erledigte Eintraege: ${done}</li>
-    <li>Offene Eintraege: ${Math.max(total - done, 0)}</li>
-    <li>Checkpoints ausgefuellt: ${countCompletedCheckpoints()}/6</li>
+    <li>Erledigte Einträge: ${done}</li>
+    <li>Offene Einträge: ${Math.max(total - done, 0)}</li>
+    <li>Checkpoints ausgefüllt: ${countCompletedCheckpoints()}/6</li>
   `;
 
-  document.getElementById("next-step").textContent = `Naechster Schritt: ${findNextStep()}`;
+  document.getElementById("next-step").textContent = `Nächster Schritt: ${toGermanDisplay(findNextStep())}`;
 }
 
 function countPhaseCompletion(phaseId) {

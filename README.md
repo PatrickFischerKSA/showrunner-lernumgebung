@@ -16,9 +16,10 @@ Diese Lernumgebung ist als direkt deploybares Static-Webprojekt gebaut.
 - Showrunner Decision System (diagnostischer Workflow)
 - Selbstwirksamkeits-Loop pro Phase (Ziel, Strategie, Hindernis, Hilfe, Reflexion)
 - Autofeedback pro Feld (qualitative Diagnose statt reiner Wortzaehlung):
-  - sprachliche Plausibilitaet inkl. Nonsense-Erkennung
+  - strenge sprachliche Plausibilitaet inkl. Nonsense-/Fuellwort-Erkennung
   - feldspezifische Strukturkriterien (Handbuch/Kompendium)
   - Ressourcenabgleich (Filmpuls, WikiHow, Serienschreiben)
+  - kritische Fail-Gates (z. B. Projekttitel ohne Sinnkern wird nicht als stark bewertet)
   - priorisierte Nachschaerfungsschritte
 - Import/Export:
   - Gesamtprojekt als JSON
@@ -60,6 +61,7 @@ npx serve .
 Dann im Browser die angezeigte URL oeffnen.
 
 Hinweis: Wenn bereits eine aeltere Version per Service Worker aktiv war, Seite einmal hart neu laden (`Cmd+Shift+R` / `Ctrl+F5`).
+Systemtexte werden bei der Ausgabe automatisch in deutsche Umlaute normalisiert.
 
 ## Deployment auf GitHub Pages
 
