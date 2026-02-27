@@ -1,4 +1,9 @@
 const STORAGE_KEY = "showrunner_lab_v1";
+const VISUALS_KEY = "showrunner_visuals_v2";
+const MATERIAL_DB = "showrunner_materials_v1";
+const MATERIAL_STORE = "materials";
+const MATERIAL_ARCHIVE_TYPE = "showrunner-materials-archive";
+const VISUAL_DEFAULTS = { visibility: 88, cardOpacity: 54 };
 
 const META_FIELDS = [
   { key: "projectTitle", label: "Projekttitel", type: "text", placeholder: "z. B. Die Grenzen der Freiheit" },
@@ -366,6 +371,25 @@ const FEEDBACK_SOURCES = {
   serienschreiben: "Serienschreiben: Kollaboration, Arbeitsteilung, Produktions- und Arbeitskultur"
 };
 
+const COMMON_DE_WORDS = new Set([
+  "die", "der", "das", "ein", "eine", "und", "oder", "aber", "dass", "weil", "damit", "deshalb", "somit", "wenn",
+  "dann", "am", "im", "in", "auf", "fuer", "mit", "ohne", "von", "zu", "ist", "sind", "war", "wird", "werden",
+  "hat", "haben", "muss", "muessen", "soll", "sollen", "kann", "koennen", "wir", "sie", "er", "figur", "konflikt",
+  "entscheidung", "konsequenz", "szene", "serie", "staffel", "episode", "thema", "these", "ziel", "widerstand",
+  "strategie", "angst", "wunde", "beduerfnis", "dialog", "subtext", "kamera", "licht", "raum", "ton", "schnitt",
+  "moralisch", "gesellschaft", "relevanz", "adaption", "roman", "rollen", "team", "projekt", "pitch", "frage",
+  "antwort", "analyse", "begruendung", "entwicklung", "beziehung", "status", "veraenderung", "leitfrage",
+  "cliffhanger", "arc", "showrunner", "writers", "room", "visuell", "institution", "zuschauer", "publikum"
+]);
+
+const THEME_TERMS = ["freiheit", "zugehoerigkeit", "macht", "religion", "emanzipation", "identitaet", "norm", "verantwortung"];
+const CONFLICT_TERMS = ["konflikt", "widerstand", "dilemma", "entscheidung", "konsequenz", "gegen", "muss", "will"];
+const SERIAL_TERMS = ["episode", "staffel", "leitfrage", "cliffhanger", "wiederkehr", "arc", "a-plot", "b-plot"];
+const VISUAL_TERMS = ["kamera", "nahaufnahme", "totale", "achsbruch", "push-in", "licht", "farbe", "raum", "ton", "schnitt", "blocking", "blick"];
+const COLLAB_TERMS = ["showrunner", "head of story", "character lead", "visual lead", "writer", "rolle", "feedback", "abgabe", "verantwortung", "team"];
+const SCRIPT_TERMS = ["premisse", "expose", "treatment", "outline", "3-akt", "plot", "subtext", "show", "dont", "tell", "szene", "dialog"];
+const CURRENT_TERMS = ["heute", "aktuell", "gegenwart", "heutigen", "gesellschaft", "zeitgenoessisch", "jetzt"];
+
 let state = loadState() || createInitialState();
 let activeTab = "dashboard";
 let activePhase = PHASES[0].id;
@@ -374,14 +398,19 @@ let pitchSeconds = 600;
 let qaSeconds = 300;
 let pitchInterval = null;
 let qaInterval = null;
+let materialDb = null;
 
 init();
 
 function init() {
+  applyVisualSettings(loadVisualSettings());
   bindTabbar();
   renderMetaFields();
   renderTimeline();
   bindGlobalControls();
+  initVisualControls();
+  initMaterialsLibrary();
+  registerServiceWorker();
   renderPhaseNav();
   renderPhaseContent();
   renderCheckpoints();
@@ -828,6 +857,414 @@ function renderRubric() {
   updateRubricTotal();
 }
 
+function loadVisualSettings() {
+  try {
+    const raw = localStorage.getItem(VISUALS_KEY);
+    if (!raw) return { ...VISUAL_DEFAULTS };
+    const parsed = JSON.parse(raw);
+    return {
+      visibility: clampNumber(Number(parsed.visibility), 30, 100, VISUAL_DEFAULTS.visibility),
+      cardOpacity: clampNumber(Number(parsed.cardOpacity), 38, 90, VISUAL_DEFAULTS.cardOpacity)
+    };
+  } catch (error) {
+    return { ...VISUAL_DEFAULTS };
+  }
+}
+
+function saveVisualSettings(settings) {
+  localStorage.setItem(VISUALS_KEY, JSON.stringify(settings));
+}
+
+function applyVisualSettings(settings) {
+  const visibilityN = settings.visibility / 100;
+  const root = document.documentElement;
+
+  const blur = 2.3 - visibilityN * 1.9;
+  const brightness = 1 + visibilityN * 0.7;
+  const saturate = 1 + visibilityN * 0.42;
+  const vignetteOpacity = 0.3 - visibilityN * 0.28;
+  const gradientOpacity = 0.24 - visibilityN * 0.2;
+
+  root.style.setProperty("--video-blur", `${Math.max(0.45, blur).toFixed(2)}px`);
+  root.style.setProperty("--video-brightness", `${brightness.toFixed(2)}`);
+  root.style.setProperty("--video-saturate", `${saturate.toFixed(2)}`);
+  root.style.setProperty("--vignette-opacity", `${Math.max(0.02, vignetteOpacity).toFixed(2)}`);
+  root.style.setProperty("--gradient-opacity", `${Math.max(0.02, gradientOpacity).toFixed(2)}`);
+  root.style.setProperty("--card-alpha", `${(settings.cardOpacity / 100).toFixed(2)}`);
+}
+
+function initVisualControls() {
+  const visibility = document.getElementById("bg-visibility");
+  const cardOpacity = document.getElementById("card-opacity");
+  const reset = document.getElementById("reset-visuals");
+  if (!visibility || !cardOpacity || !reset) return;
+
+  const current = loadVisualSettings();
+  visibility.value = String(current.visibility);
+  cardOpacity.value = String(current.cardOpacity);
+  applyVisualSettings(current);
+
+  visibility.addEventListener("input", () => {
+    const next = {
+      visibility: clampNumber(Number(visibility.value), 30, 100, VISUAL_DEFAULTS.visibility),
+      cardOpacity: clampNumber(Number(cardOpacity.value), 38, 90, VISUAL_DEFAULTS.cardOpacity)
+    };
+    applyVisualSettings(next);
+    saveVisualSettings(next);
+  });
+
+  cardOpacity.addEventListener("input", () => {
+    const next = {
+      visibility: clampNumber(Number(visibility.value), 30, 100, VISUAL_DEFAULTS.visibility),
+      cardOpacity: clampNumber(Number(cardOpacity.value), 38, 90, VISUAL_DEFAULTS.cardOpacity)
+    };
+    applyVisualSettings(next);
+    saveVisualSettings(next);
+  });
+
+  reset.addEventListener("click", () => {
+    const defaults = { ...VISUAL_DEFAULTS };
+    visibility.value = String(defaults.visibility);
+    cardOpacity.value = String(defaults.cardOpacity);
+    applyVisualSettings(defaults);
+    saveVisualSettings(defaults);
+  });
+}
+
+async function initMaterialsLibrary() {
+  const addButton = document.getElementById("materials-add");
+  const persistButton = document.getElementById("materials-persist");
+  const exportButton = document.getElementById("materials-export");
+  const importButton = document.getElementById("materials-import");
+  const fileInput = document.getElementById("materials-file-input");
+  const importInput = document.getElementById("materials-import-file");
+  const statusEl = document.getElementById("materials-status");
+  if (!addButton || !persistButton || !exportButton || !importButton || !fileInput || !importInput || !statusEl) return;
+
+  if (!("indexedDB" in window)) {
+    statusEl.textContent = "IndexedDB nicht verfuegbar.";
+    return;
+  }
+
+  try {
+    materialDb = await openMaterialsDb();
+    await renderMaterialsList();
+    await paintStorageStatus();
+  } catch (error) {
+    statusEl.textContent = "Materialspeicher konnte nicht initialisiert werden.";
+    return;
+  }
+
+  addButton.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", async () => {
+    const files = [...(fileInput.files || [])];
+    if (files.length === 0) return;
+    await addMaterialFiles(files);
+    fileInput.value = "";
+    await renderMaterialsList();
+  });
+
+  persistButton.addEventListener("click", async () => {
+    if (!navigator.storage || !navigator.storage.persist) {
+      statusEl.textContent = "Persistenter Speicher wird von diesem Browser nicht unterstuetzt.";
+      return;
+    }
+    const granted = await navigator.storage.persist();
+    statusEl.textContent = granted ? "Dauerhafte Speicherung aktiv." : "Persistenz wurde nicht gewaehrt.";
+    await paintStorageStatus();
+  });
+
+  exportButton.addEventListener("click", async () => {
+    await exportMaterialsArchive();
+  });
+
+  importButton.addEventListener("click", () => {
+    importInput.click();
+  });
+
+  importInput.addEventListener("change", async () => {
+    const [file] = importInput.files || [];
+    if (!file) return;
+    try {
+      const restored = await importMaterialsArchive(file);
+      await renderMaterialsList();
+      alert(`${restored} Materialien wurden aus dem Backup wiederhergestellt.`);
+    } catch (error) {
+      alert("Material-Import fehlgeschlagen: Datei ist ungueltig oder beschaedigt.");
+    } finally {
+      importInput.value = "";
+    }
+  });
+}
+
+function openMaterialsDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(MATERIAL_DB, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(MATERIAL_STORE)) {
+        const store = db.createObjectStore(MATERIAL_STORE, { keyPath: "id" });
+        store.createIndex("createdAt", "createdAt");
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function addMaterialFiles(files) {
+  if (!materialDb) return;
+  const tx = materialDb.transaction(MATERIAL_STORE, "readwrite");
+  const store = tx.objectStore(MATERIAL_STORE);
+
+  files.forEach((file) => {
+    const id = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${file.name}`;
+    store.put({
+      id,
+      name: file.name,
+      type: file.type || "application/octet-stream",
+      size: file.size,
+      createdAt: new Date().toISOString(),
+      blob: file
+    });
+  });
+
+  await txDone(tx);
+  await paintStorageStatus();
+}
+
+async function upsertMaterials(items) {
+  if (!materialDb || !Array.isArray(items) || items.length === 0) return;
+  const tx = materialDb.transaction(MATERIAL_STORE, "readwrite");
+  const store = tx.objectStore(MATERIAL_STORE);
+  items.forEach((item) => {
+    store.put(item);
+  });
+  await txDone(tx);
+  await paintStorageStatus();
+}
+
+async function listMaterials() {
+  if (!materialDb) return [];
+  const tx = materialDb.transaction(MATERIAL_STORE, "readonly");
+  const store = tx.objectStore(MATERIAL_STORE);
+  const request = store.getAll();
+  const items = await requestToPromise(request);
+  return (items || []).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+}
+
+async function deleteMaterial(id) {
+  if (!materialDb) return;
+  const tx = materialDb.transaction(MATERIAL_STORE, "readwrite");
+  tx.objectStore(MATERIAL_STORE).delete(id);
+  await txDone(tx);
+  await paintStorageStatus();
+}
+
+async function exportMaterialsArchive() {
+  const items = await listMaterials();
+  if (items.length === 0) {
+    alert("Keine Materialien vorhanden, die gesichert werden koennen.");
+    return;
+  }
+
+  const files = await Promise.all(
+    items.map(async (item) => ({
+      id: item.id,
+      name: item.name,
+      type: item.type || "application/octet-stream",
+      size: Number(item.size || 0),
+      createdAt: item.createdAt || new Date().toISOString(),
+      dataUrl: await blobToDataURL(item.blob)
+    }))
+  );
+
+  const payload = {
+    type: MATERIAL_ARCHIVE_TYPE,
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    files
+  };
+
+  downloadFile(
+    `showrunner_materialien_backup_${new Date().toISOString().slice(0, 10)}.json`,
+    JSON.stringify(payload),
+    "application/json"
+  );
+}
+
+async function importMaterialsArchive(file) {
+  const text = await file.text();
+  const payload = JSON.parse(text);
+  if (!payload || payload.type !== MATERIAL_ARCHIVE_TYPE || !Array.isArray(payload.files)) {
+    throw new Error("invalid archive");
+  }
+
+  const restored = [];
+  for (const entry of payload.files) {
+    if (!entry || typeof entry !== "object" || !entry.dataUrl) continue;
+    const blob = dataURLToBlob(String(entry.dataUrl));
+    const createdAt = new Date(String(entry.createdAt || new Date().toISOString()));
+    restored.push({
+      id:
+        typeof entry.id === "string" && entry.id
+          ? entry.id
+          : (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${entry.name || "material"}`),
+      name: String(entry.name || "material"),
+      type: String(entry.type || blob.type || "application/octet-stream"),
+      size: Number(entry.size || blob.size || 0),
+      createdAt: Number.isNaN(createdAt.getTime()) ? new Date().toISOString() : createdAt.toISOString(),
+      blob
+    });
+  }
+
+  await upsertMaterials(restored);
+  return restored.length;
+}
+
+async function renderMaterialsList() {
+  const box = document.getElementById("materials-list");
+  if (!box) return;
+  const items = await listMaterials();
+
+  if (items.length === 0) {
+    box.innerHTML = "<p class='subtle'>Noch keine Materialien gespeichert.</p>";
+    return;
+  }
+
+  box.innerHTML = items
+    .map((item) => {
+      const dt = new Date(item.createdAt || Date.now()).toLocaleString("de-CH");
+      return `
+        <article class="material-item">
+          <div class="material-head">
+            <strong>${escapeHtml(item.name)}</strong>
+            <span class="material-meta">${formatBytes(item.size)} | ${escapeHtml(dt)}</span>
+          </div>
+          <div class="button-row">
+            <button type="button" data-material-action="open" data-material-id="${escapeHtml(item.id)}">Oeffnen</button>
+            <button type="button" data-material-action="download" data-material-id="${escapeHtml(item.id)}">Download</button>
+            <button type="button" class="ghost" data-material-action="delete" data-material-id="${escapeHtml(item.id)}">Loeschen</button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+
+  box.querySelectorAll("button[data-material-action]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const action = button.dataset.materialAction;
+      const id = button.dataset.materialId;
+      const material = (await listMaterials()).find((entry) => entry.id === id);
+      if (!material) return;
+
+      if (action === "delete") {
+        await deleteMaterial(id);
+        await renderMaterialsList();
+        return;
+      }
+
+      const url = URL.createObjectURL(material.blob);
+      if (action === "open") {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+      if (action === "download") {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = material.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 2500);
+    });
+  });
+}
+
+async function paintStorageStatus() {
+  const statusEl = document.getElementById("materials-status");
+  if (!statusEl) return;
+  const count = (await listMaterials()).length;
+
+  let persistText = "Persistenzstatus unbekannt";
+  if (navigator.storage && navigator.storage.persisted) {
+    const persisted = await navigator.storage.persisted();
+    persistText = persisted ? "persistiert" : "nicht persistiert";
+  }
+
+  let quotaText = "";
+  if (navigator.storage && navigator.storage.estimate) {
+    const estimate = await navigator.storage.estimate();
+    const used = estimate.usage || 0;
+    quotaText = ` | genutzt ${formatBytes(used)}`;
+  }
+
+  statusEl.textContent = `${count} Dateien gespeichert | ${persistText}${quotaText}`;
+}
+
+function requestToPromise(request) {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function txDone(tx) {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
+function formatBytes(bytes) {
+  const units = ["B", "KB", "MB", "GB"];
+  let value = Number(bytes || 0);
+  let idx = 0;
+  while (value >= 1024 && idx < units.length - 1) {
+    value /= 1024;
+    idx += 1;
+  }
+  return `${value.toFixed(idx === 0 ? 0 : 1)} ${units[idx]}`;
+}
+
+function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+function dataURLToBlob(dataURL) {
+  const parts = String(dataURL || "").split(",");
+  if (parts.length < 2) throw new Error("invalid dataurl");
+  const header = parts[0];
+  const body = parts[1];
+  const mimeMatch = header.match(/^data:(.*?);base64$/i);
+  const mime = mimeMatch ? mimeMatch[1] : "application/octet-stream";
+  const binary = atob(body);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mime });
+}
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  if (!window.location.protocol.startsWith("http")) return;
+  navigator.serviceWorker.register("./sw.js").catch(() => {
+    // no-op: app works without SW
+  });
+}
+
+function clampNumber(value, min, max, fallback) {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.max(min, Math.min(max, value));
+}
+
 function bindGlobalControls() {
   document.getElementById("export-all-json").addEventListener("click", exportAllJSON);
   document.getElementById("import-all-json").addEventListener("click", () => {
@@ -1071,38 +1508,60 @@ function buildFieldFeedback(fieldKey, fieldLabel, rawValue, context) {
   const words = countWords(value);
   const checks = [];
 
-  const minimumWords = context === "meta" ? 1 : 12;
+  const language = analyzeLinguisticQuality(value, normalized);
   checks.push(
     makeCheck(
-      words >= minimumWords,
-      "Inhaltstiefe",
-      `Umfang ist tragfaehig (${words} Woerter).`,
-      `Noch zu knapp (${words} Woerter). Erweitern mit konkreten Entscheidungen, nicht nur Schlagwoertern.`,
+      !language.isLikelyNonsense,
+      "Sprachliche Plausibilitaet",
+      `Text wirkt sprachlich konsistent (Erkennungsquote ${Math.round(language.knownRatio * 100)}%).`,
+      "Text wirkt zufaellig oder unplausibel. Bitte in klaren, bedeutungsvollen Saetzen neu formulieren.",
       "kompendium",
-      "Mindestens 2-4 konkrete Saetze mit Belegen und Konsequenz formulieren."
+      "Jeden Satz als Aussage + Begruendung schreiben, keine Zufallssilben.",
+      3
+    )
+  );
+
+  const minWords = context === "meta" ? 1 : 10;
+  checks.push(
+    makeCheck(
+      words >= minWords,
+      "Ausarbeitungstiefe",
+      `Umfang reicht fuer eine Beurteilung (${words} Woerter).`,
+      `Zu knapp (${words} Woerter). Feld braucht mehr Kontext und Entscheidungstiefe.`,
+      "kompendium",
+      "Mindestens zwei konkrete Saetze mit Ursache-Wirkung und Folge schreiben.",
+      2
     )
   );
 
   if (["phase", "checkpoint", "pitch", "decision"].includes(context)) {
     checks.push(
       makeCheck(
-        hasAny(normalized, ["entscheidung", "konsequenz", "konflikt", "dilemma", "widerstand"]),
-        "Dramaturgischer Kern",
-        "Konflikt/Entscheidung ist erkennbar.",
-        "Dramaturgischer Kern noch weich. Konflikt + Entscheidung + Konsequenz explizit benennen.",
+        hasAny(normalized, CONFLICT_TERMS),
+        "Konflikt- oder Konsequenzlogik",
+        "Konflikt/Entscheidung/Konsequenz wird inhaltlich adressiert.",
+        "Konflikt- und Konsequenzlogik fehlt noch.",
         "handbuch",
-        "Formel direkt einbauen: Wer will was, was steht im Weg, welche Entscheidung folgt?"
+        "Explizit benennen: Wer will was, was blockiert, welche Konsequenz folgt?",
+        3
       )
     );
   }
 
   checks.push(...buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words, context));
 
-  const passed = checks.filter((check) => check.pass).length;
-  const score = Math.round((passed / Math.max(checks.length, 1)) * 100);
+  let score = computeWeightedScore(checks);
+  if (language.isLikelyNonsense) score = Math.min(score, 20);
+  if (words < 4 && context !== "meta") score = Math.min(score, 35);
+
   const level = score >= 80 ? "strong" : score >= 55 ? "medium" : "weak";
   const levelLabel = score >= 80 ? "hoch differenziert" : score >= 55 ? "ausbaufaehig" : "grundlegend nachschaerfen";
-  const nextSteps = checks.filter((check) => !check.pass).map((check) => check.fix).filter(Boolean).slice(0, 3);
+  const nextSteps = checks
+    .filter((check) => !check.pass)
+    .sort((a, b) => (b.weight || 1) - (a.weight || 1))
+    .map((check) => check.fix)
+    .filter(Boolean)
+    .slice(0, 3);
   const sources = [...new Set(checks.map((check) => check.source).filter(Boolean))];
 
   return { score, level, levelLabel, checks, nextSteps, sources };
@@ -1110,287 +1569,144 @@ function buildFieldFeedback(fieldKey, fieldLabel, rawValue, context) {
 
 function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words, context) {
   const checks = [];
-  const screenplayTools = ["expose", "treatment", "premisse", "3-akt", "turning", "show dont tell", "subtext"];
-  const serialTokens = ["episode", "staffel", "leitfrage", "cliffhanger", "wiederkehr", "arc"];
-  const visualTokens = ["kamera", "nahaufnahme", "totale", "licht", "farbe", "raum", "ton", "schnitt", "blick", "blocking"];
-  const collaborationTokens = ["showrunner", "head of story", "character", "visual", "writer", "room", "rolle", "feedback", "arbeitsteil", "abgabe"];
+  const matchedTheme = getMatchedTerms(normalized, THEME_TERMS);
+  const matchedSerial = getMatchedTerms(normalized, SERIAL_TERMS);
+  const matchedVisual = getMatchedTerms(normalized, VISUAL_TERMS);
+  const matchedCollab = getMatchedTerms(normalized, COLLAB_TERMS);
+  const matchedScript = getMatchedTerms(normalized, SCRIPT_TERMS);
 
   switch (fieldKey) {
     case "projectTitle":
-      checks.push(
-        makeCheck(
-          words >= 2,
-          "Projektfokus",
-          "Titel ist als erzaehlerischer Fokus benannt.",
-          "Titel noch zu vage oder zu kurz.",
-          "kompendium",
-          "Titel mit Konfliktkern schaerfen (z. B. Freiheit vs Zugehoerigkeit)."
-        )
-      );
+      checks.push(makeCheck(words >= 2 && words <= 10, "Titel-Schaerfe", "Titel ist knapp und fokussiert.", "Titel ist zu vage oder unklar.", "kompendium", "Einen klaren Konfliktbegriff im Titel verankern (2-10 Woerter).", 2));
+      checks.push(makeCheck(matchedTheme.length >= 1 || hasAny(normalized, ["jenny", "meier", "1832"]), "Thematischer Anker", `Themenanker vorhanden (${matchedTheme.join(", ") || "JENNY-Kontext"}).`, "Themenanker fehlt.", "handbuch", "Mindestens ein Leitmotiv (z. B. Freiheit, Zugehoerigkeit, Macht) im Titel benennen.", 3));
+      checks.push(makeCheck(!hasAny(normalized, ["asdf", "qwer", "lorem", "xxx", "testtest"]), "Glaubwuerdigkeit", "Kein Platzhalter- oder Zufallstitel erkannt.", "Titel enthaelt Platzhalter oder Zufallsmuster.", "kompendium", "Titel durch inhaltlich tragfaehige Formulierung ersetzen.", 3));
       break;
     case "teamName":
     case "className":
-      checks.push(
-        makeCheck(
-          words >= 1,
-          "Projektverankerung",
-          "Organisationseintrag ist vorhanden.",
-          "Eintrag fehlt.",
-          "serienschreiben",
-          "Feld ausfuellen, damit Export und Teamkoordination eindeutig bleiben."
-        )
-      );
+      checks.push(makeCheck(words >= 1 && !/^[^a-zA-Z0-9]*$/.test(value), "Eindeutige Zuordnung", "Eintrag ist als reale Zuordnung nutzbar.", "Eintrag fehlt oder ist unplausibel.", "serienschreiben", "Eindeutigen Team-/Klassenbezug eintragen.", 2));
       break;
     case "startDate":
-      checks.push(
-        makeCheck(
-          /^\d{4}-\d{2}-\d{2}$/.test(value),
-          "Zeitlicher Startpunkt",
-          "Startdatum ist formal korrekt gesetzt.",
-          "Datum fehlt oder ist nicht im Format JJJJ-MM-TT.",
-          "serienschreiben",
-          "Startdatum setzen, damit Phasenplanung und Verantwortlichkeiten planbar werden."
-        )
-      );
+      checks.push(makeCheck(/^\d{4}-\d{2}-\d{2}$/.test(value), "Planungsfaehiges Datum", "Datum ist formal korrekt.", "Datum fehlt oder Format ist falsch.", "serienschreiben", "Datum im Format JJJJ-MM-TT eintragen.", 3));
       break;
     case "projectIdea":
-      checks.push(
-        makeCheck(
-          PROJECT_IDEAS.includes(value),
-          "Ideenanker",
-          "Projektidee ist klar verortet.",
-          "Projektidee ist nicht aus der Auswahlliste gesetzt.",
-          "kompendium",
-          "Eine Kernidee auswaehlen und darauf alle weiteren Entscheidungen rueckbinden."
-        )
-      );
+      checks.push(makeCheck(PROJECT_IDEAS.includes(value), "Projektidee verankert", "Idee ist aus dem kuratierten Set gewaehlt.", "Idee ist nicht sauber verankert.", "kompendium", "Eine der vorgegebenen Projektideen waehlen.", 2));
       break;
     case "teamRoles":
     case "roles":
     case "support":
-      checks.push(
-        makeCheck(
-          countMatches(normalized, collaborationTokens) >= 3,
-          "Kollaboration und Arbeitsteilung",
-          "Teamrollen und Zusammenarbeit sind nachvollziehbar verteilt.",
-          "Rollen/Arbeitsteilung sind noch unklar. Zustaendigkeiten und Schnittstellen klar benennen.",
-          "serienschreiben",
-          "Mindestens drei Rollen + je eine klare Verantwortung und ein Feedback-Takt festlegen."
-        )
-      );
+      checks.push(makeCheck(matchedCollab.length >= 2, "Rollenmodell Writers' Room", `Rollen-/Kooperationsbegriffe vorhanden (${matchedCollab.join(", ") || "-" }).`, "Rollenlogik im Sinne Writers' Room fehlt.", "handbuch", "Mindestens zwei Rollen und ihre Verantwortungsgrenzen benennen.", 3));
+      checks.push(makeCheck(hasAny(normalized, ["feedback", "abgabe", "termin", "zustandig", "verantwort"]), "Arbeitskultur", "Abstimmungs- oder Verantwortungslogik ist enthalten.", "Arbeitsprozess bleibt unklar.", "serienschreiben", "Feedback-Takt, Verantwortliche und Abgabeform festlegen.", 3));
       break;
     case "textCore":
+      checks.push(makeCheck(matchedTheme.length >= 1 && hasAny(normalized, CONFLICT_TERMS), "Interpretativer Konfliktkern", `Themen- und Konfliktbezug vorhanden (${matchedTheme.join(", ") || "Thema"}).`, "Textkern bleibt beschreibend statt konfliktorientiert.", "kompendium", "Romanpassage als gesellschaftlichen Konflikt formulieren (nicht nur Inhalt).", 3));
+      break;
     case "adaptationRule":
-      checks.push(
-        makeCheck(
-          hasAny(normalized, ["interpret", "adaption", "zeigen", "blick", "raum", "status"]) && hasAny(normalized, ["nicht", "statt"]),
-          "Adaption statt Nacherzaehlung",
-          "Der Medienwechsel wird interpretierend gedacht.",
-          "Noch zu nah an der Inhaltswiedergabe. Uebersetzung in Blick/Handlung/Raum konkretisieren.",
-          "kompendium",
-          "Formulieren: 'Wir interpretieren den Text durch ... , nicht durch reine Inhaltswiedergabe.'"
-        )
-      );
+      checks.push(makeCheck(hasAny(normalized, ["interpret", "adaption", "uebersetz", "zeigen"]) && hasAny(normalized, ["nicht", "statt"]), "Medienwechsel-Regel", "Regel zur Adaption ist sichtbar.", "Regel fuer den Medienwechsel fehlt.", "kompendium", "Satz ergaenzen: Was wird gezeigt statt erklaert/erzaehlt?", 3));
+      checks.push(makeCheck(hasAny(normalized, ["blick", "raum", "status", "dialog", "konsequenz"]), "Szenische Operationalisierung", "Regel ist in Szenenlogik uebersetzt.", "Adaption bleibt abstrakt.", "handbuch", "Konkrete Mittel nennen: Blickregie, Raumdramaturgie, Statuswechsel.", 2));
+      break;
+    case "microGoal":
+    case "goal":
+    case "strategy":
+    case "nextSteps":
+    case "decisionActionPlan":
+      checks.push(makeCheck(hasAny(normalized, ["bis", "phase", "termin", "datum", "heute", "morgen", "naechst"]), "Zeitliche Verbindlichkeit", "Zeitrahmen ist gesetzt.", "Keine klare zeitliche Verbindlichkeit.", "serienschreiben", "Frist + Lieferobjekt nennen.", 3));
+      checks.push(makeCheck(hasAny(normalized, ["wer", "wir", "team", "rolle", "verantwort"]), "Verantwortungsklaerung", "Verantwortlichkeit ist adressiert.", "Verantwortlichkeiten fehlen.", "serienschreiben", "Zustandige Person/Rolle und Ergebnis definieren.", 2));
       break;
     case "seriesStatement":
-      checks.push(
-        makeCheck(
-          hasAny(normalized, ["zeigt", "dass"]) && !hasAny(normalized, ["dann", "danach", "am ende passiert"]),
-          "These ohne Ereigniskette",
-          "Thematische Aussage ist als belastbare These formuliert.",
-          "Noch zu ereignisnah. Aussage als allgemeiner moralischer Satz formulieren.",
-          "handbuch",
-          "Satzbau nutzen: 'Diese Serie zeigt, dass ...' ohne Plotchronologie."
-        )
-      );
+      checks.push(makeCheck(hasAny(normalized, ["zeigt", "dass"]), "These als Aussage", "Series Statement ist als These angelegt.", "These-Form fehlt.", "handbuch", "Mit 'Diese Serie zeigt, dass ...' formulieren.", 3));
+      checks.push(makeCheck(!hasAny(normalized, ["dann", "danach", "zuerst", "am ende passiert"]), "Keine Plotchronologie", "Statement bleibt auf Bedeutungsebene.", "Statement kippt in Ereignisabfolge.", "handbuch", "Chronologische Plotdetails entfernen, moralischen Kern behalten.", 3));
       break;
     case "centralConflict":
-      checks.push(
-        makeCheck(
-          hasAny(normalized, ["will", "ziel"]) && hasAny(normalized, ["welt", "muss", "gegen", "widerstand"]),
-          "Dauerhafter Konflikt X vs Y",
-          "Konfliktachse ist als Gegenkraft angelegt.",
-          "Konflikt noch nicht als Gegenspannung sichtbar.",
-          "handbuch",
-          "Explizit schreiben: Figur will X, Welt/Institution verlangt Y."
-        )
-      );
+      checks.push(makeCheck(hasAny(normalized, ["will", "ziel"]) && hasAny(normalized, ["welt", "muss", "institution", "widerstand", "gegen"]), "X-vs-Y-Spannung", "Konfliktachse ist als Gegenspannung formuliert.", "X-vs-Y-Struktur fehlt.", "handbuch", "Explizit schreiben: Figur will X, Welt verlangt Y.", 3));
       break;
     case "whySeries":
-    case "episodeOverview":
     case "seriesMechanics":
     case "pitchMechanics":
-      checks.push(
-        makeCheck(
-          hasAny(normalized, serialTokens) && hasAny(normalized, ["entscheidung", "konsequenz"]),
-          "Serielle Tragfaehigkeit",
-          "Episodische Wiederholbarkeit und Konsequenzlogik sind erkennbar.",
-          "Serienmechanik bleibt unklar. Episode/Staffel + Konsequenzlogik ausformulieren.",
-          "handbuch",
-          "Leitfrage pro Episode + veraenderte Beziehung als Konsequenz benennen."
-        )
-      );
-      checks.push(
-        makeCheck(
-          hasAny(normalized, screenplayTools),
-          "Drehbuchprozess (Filmpuls)",
-          "Prozesssprache (z. B. Premisse/Treatment/Turn) wird genutzt.",
-          "Prozessschritte fehlen. Vorstufe (Premisse/Expose/Treatment) klar benennen.",
-          "filmpuls",
-          "Mindestens einen Zwischenschritt zwischen Idee und Szene explizit machen."
-        )
-      );
+    case "episodeOverview":
+      checks.push(makeCheck(matchedSerial.length >= 2, "Serielle Architektur", `Serienmarker vorhanden (${matchedSerial.join(", ") || "-" }).`, "Serienlogik bleibt zu allgemein.", "handbuch", "Episode, Leitfrage, Cliffhanger und Arc explizit ausarbeiten.", 3));
+      checks.push(makeCheck(hasAny(normalized, ["entscheidung", "konsequenz"]), "Konsequenzprinzip", "Konsequenzen sind als Serienmotor angelegt.", "Konsequenzprinzip fehlt.", "kompendium", "Pro Episode Konsequenz notieren, die Beziehungen veraendert.", 3));
+      checks.push(makeCheck(matchedScript.length >= 1, "Drehbuchprozess", `Prozessbezug vorhanden (${matchedScript.join(", ") || "-" }).`, "Drehbuchprozessstufe fehlt.", "filmpuls", "Premisse/Expose/Treatment/Plotstruktur als Zwischenschritt benennen.", 2));
+      break;
+    case "relevanceNow":
+      checks.push(makeCheck(getMatchedTerms(normalized, CURRENT_TERMS).length >= 1, "Gegenwartsbezug", "Aktualitaetsbezug ist vorhanden.", "Warum-jetzt-Perspektive fehlt.", "kompendium", "Explizit benennen, welches heutige Problem die Serie spiegelt.", 3));
       break;
     case "mainFigure":
-      checks.push(
-        makeCheck(
-          countMatches(normalized, ["wunde", "beduerfnis", "ziel", "angst", "selbsttaeusch", "strategie"]) >= 4,
-          "Psychologisches Vollprofil",
-          "Figurprofil deckt die zentralen Dramafaktoren ab.",
-          "Figurprofil ist noch lueckenhaft.",
-          "handbuch",
-          "Wunde, Beduerfnis, Ziel, Angst, Selbsttaeuschung und Strategie einzeln ausformulieren."
-        )
-      );
+      checks.push(makeCheck(countMatches(normalized, ["wunde", "beduerfnis", "ziel", "angst", "selbsttaeusch", "strategie"]) >= 4, "Psychologisches Profil", "Figurenprofil ist differenziert angelegt.", "Zentrale psychologische Komponenten fehlen.", "handbuch", "Wunde, Beduerfnis, Ziel, Angst, Selbsttaeuschung und Strategie systematisch ausfuellen.", 3));
+      break;
+    case "antagonisticForce":
+      checks.push(makeCheck(hasAny(normalized, ["figur", "institution", "norm", "staat", "familie", "gesellschaft"]), "Gegenkraft-Typ", "Art der Gegenkraft ist benannt.", "Gegenkraft bleibt unscharf.", "handbuch", "Benennen, ob Person, Institution oder Norm die Gegenkraft darstellt.", 3));
+      break;
+    case "relationshipArc":
+      checks.push(makeCheck(hasAny(normalized, ["ausgang", "vorher", "am anfang"]) && hasAny(normalized, ["veraender", "kippt", "am ende"]), "Beziehungsveraenderung", "Entwicklungslinie ist nachvollziehbar.", "Beziehungsdynamik ist nicht klar.", "kompendium", "Startzustand, Kippmoment und Endzustand der Beziehung benennen.", 3));
       break;
     case "staffelArc":
     case "seasonThesis":
-      checks.push(
-        makeCheck(
-          hasAny(normalized, ["am anfang", "beginn"]) && hasAny(normalized, ["am ende", "erkennt"]),
-          "Moralische Bewegung der Staffel",
-          "Transformation Anfang->Ende ist klar.",
-          "Veraenderung bleibt diffus.",
-          "handbuch",
-          "Die Formel explizit ausfuellen: Anfangsglaube -> Enderkenntnis."
-        )
-      );
+      checks.push(makeCheck(hasAny(normalized, ["am anfang", "beginn"]) && hasAny(normalized, ["am ende", "erkennt"]), "Moralische Staffelbewegung", "Transformationsbogen ist angelegt.", "Anfang-Ende-Verschiebung fehlt.", "handbuch", "Formel konsequent ausfuellen: Anfangsglaube -> Enderkenntnis.", 3));
+      break;
+    case "worldRules":
+    case "spaceLogic":
+      checks.push(makeCheck(hasAny(normalized, ["macht", "institution", "regel", "code", "raum", "oeffentlich", "privat"]), "Weltlogik", "Sozialregeln und Raumfunktion sind erkennbar.", "Weltregeln bleiben unscharf.", "kompendium", "Pro Raum eine soziale Funktion und Machtwirkung angeben.", 3));
       break;
     case "cameraRules":
     case "lightSoundRules":
     case "visualConcept":
     case "pitchVisual":
-      checks.push(
-        makeCheck(
-          countMatches(normalized, visualTokens) >= 3,
-          "Visuelle/auditive Konkretion",
-          "Kamera/Licht/Ton sind als Regeln ausgearbeitet.",
-          "Aesthetik bleibt allgemein. Mindestens drei konkrete Regelentscheidungen ergaenzen.",
-          "kompendium",
-          "Wenn-Dann-Regeln schreiben (z. B. Nahaufnahme nur bei Erkenntnis)."
-        )
-      );
+      checks.push(makeCheck(matchedVisual.length >= 3, "Audiovisuelle Regelklarheit", `Konkrete Stilmarker vorhanden (${matchedVisual.join(", ") || "-" }).`, "Audiovisuelle Regeln sind zu allgemein.", "handbuch", "Mindestens drei Wenn-Dann-Regeln fuer Kamera/Licht/Ton formulieren.", 3));
       break;
+    case "turningPoints":
+      checks.push(makeCheck(hasAny(normalized, ["wendepunkt", "kipp", "entscheidung", "offenbarung", "bruch"]), "Dramaturgische Kipppunkte", "Wendelogik ist sichtbar.", "Wendepunkte sind nicht klar konturiert.", "filmpuls", "Pro Wendepunkt Ausloeser, Entscheidung und Folge notieren.", 3));
+      break;
+    case "consistencyCheck":
+      checks.push(makeCheck(hasAny(normalized, ["risiko", "bruch", "inkonsist", "leerlauf", "massnahme"]), "Qualitaetssicherung", "Koharenzrisiken werden reflektiert.", "Risikoanalyse fehlt.", "handbuch", "Mindestens zwei Risiken + Gegenmassnahmen benennen.", 3));
+      break;
+    case "sceneGoal":
     case "sceneStructure":
-      checks.push(
-        makeCheck(
-          hasAll(normalized, ["ziel", "widerstand"]) && hasAny(normalized, ["entscheidung", "konsequenz"]),
-          "Szenenmechanik",
-          "Ziel-Widerstand-Entscheidung-Konsequenz ist angelegt.",
-          "Szenenmechanik unvollstaendig.",
-          "handbuch",
-          "Viererstruktur in genau dieser Reihenfolge sichtbar machen."
-        )
-      );
+      checks.push(makeCheck(hasAny(normalized, ["ziel", "widerstand"]) && hasAny(normalized, ["entscheidung", "konsequenz", "status"]), "Szenenmechanik", "Szenenlogik ist dramaturgisch belastbar.", "Szenenmechanik ist unvollstaendig.", "handbuch", "Viererschritt explizit ausformulieren: Ziel, Widerstand, Entscheidung, Konsequenz.", 3));
       break;
     case "dialogSubtext":
-      checks.push(
-        makeCheck(
-          hasAny(normalized, ["subtext", "verborgen", "eigentlich", "will"]) && hasAny(normalized, ["reaktion", "spannung", "status"]),
-          "Dialog als Handlung",
-          "Subtext und Machtverschiebung sind erkennbar.",
-          "Dialog erklaert noch statt zu handeln.",
-          "kompendium",
-          "Pro Figur notieren: 'sagt' vs 'will wirklich'."
-        )
-      );
+      checks.push(makeCheck(hasAny(normalized, ["subtext", "verborgen", "eigentlich", "status"]) && hasAny(normalized, ["will", "vermeiden", "durchsetzen"]), "Subtext und Macht", "Dialogfunktion ist auf Handlung und Macht ausgerichtet.", "Dialog bleibt auf Informationsebene.", "kompendium", "Pro Figur notieren: Gesagtes, Gemeintes, Machtziel.", 3));
       break;
     case "scriptExcerpt":
-      checks.push(
-        makeCheck(
-          hasAny(normalized, ["int.", "ext.", "szene", "tag", "nacht"]) || /[A-Z]{2,}\s*\n/.test(value),
-          "Script-Format und Lesbarkeit",
-          "Drehbuchnahe Form ist vorhanden.",
-          "Formale Drehbuchmarker fehlen.",
-          "wikihow",
-          "Szenenueberschrift (INT./EXT., Ort, Zeit) und klar getrennte Dialogteile einsetzen."
-        )
-      );
+      checks.push(makeCheck(hasAny(normalized, ["int", "ext", "tag", "nacht", "dialog"]) || /[A-Z]{2,}\s*\n/.test(value), "Formale Skriptlesbarkeit", "Drehbuchformat ist erkennbar.", "Skriptformat ist kaum lesbar.", "wikihow", "Szenenueberschrift + Dialogblock + Handlungszeile sauber trennen.", 3));
+      break;
+    case "modelSceneIntent":
+    case "promptPositive":
+    case "promptNegative":
+    case "sceneInterpretation":
+      checks.push(makeCheck(hasAny(normalized, ["figur", "raum", "licht", "kamera", "emotion", "macht"]), "Modellszene als Interpretation", "Prompt/Interpretation bindet visuelle Bedeutung ein.", "Modellszene bleibt rein dekorativ.", "kompendium", "Prompt an Figurenziel, Raumfunktion und Machtverschiebung koppeln.", 3));
       break;
     case "modelTool":
-      checks.push(
-        makeCheck(
-          hasAny(normalized, ["leonardo", "playground", "canva", "writerduet", "arc", "tool"]) && hasAny(normalized, ["weil", "um", "damit"]),
-          "Toolwahl mit Produktionslogik",
-          "Toolwahl ist begruendet und funktional.",
-          "Toolwahl wirkt beliebig.",
-          "serienschreiben",
-          "Tool + Arbeitszweck + erwarteter Output explizit koppeln."
-        )
-      );
-      break;
-    case "nextSteps":
-    case "goal":
-    case "strategy":
-    case "decisionActionPlan":
-      checks.push(
-        makeCheck(
-          hasAny(normalized, ["bis", "phase", "termin", "naechst", "heute"]) && hasAny(normalized, ["wir", "team", "rolle", "verantwort"]),
-          "Verbindlichkeit und Umsetzung",
-          "Schritte sind zeitlich und organisatorisch konkret.",
-          "Aktion ist noch nicht verbindlich genug.",
-          "serienschreiben",
-          "Jeden Schritt mit Frist, Verantwortlichkeit und pruefbarem Ergebnis notieren."
-        )
-      );
+      checks.push(makeCheck(hasAny(normalized, ["leonardo", "playground", "canva", "writerduet", "arc", "tool"]) && hasAny(normalized, ["weil", "damit", "um"]), "Toolentscheidung mit Zweck", "Toolwahl ist zweckgebunden begruendet.", "Toolwahl ist nicht begruendet.", "serienschreiben", "Tool + Produktionszweck + erwartetes Ergebnis in einem Satz verbinden.", 3));
       break;
     case "intro":
     case "pitchHook":
-      checks.push(
-        makeCheck(
-          hasAny(normalized, ["these", "relevanz", "warum", "jetzt"]) && words >= 20,
-          "Pitch-Einstieg mit Relevanzdruck",
-          "Hook verbindet Aussage und Gegenwartsbezug.",
-          "Einstieg braucht mehr Relevanz und klare These.",
-          "kompendium",
-          "In drei Saetzen bauen: Kernthese, Konflikt, Warum jetzt."
-        )
-      );
+      checks.push(makeCheck(hasAny(normalized, ["these", "relevanz", "warum", "jetzt"]) && words >= 15, "Pitch-Hook", "Einstieg koppelt These und Relevanz.", "Hook ohne klare These/Relevanz.", "kompendium", "In 3 Saetzen bauen: These, Konflikt, Warum jetzt.", 3));
+      break;
+    case "worldFigures":
+    case "pitchWorldFigures":
+      checks.push(makeCheck(hasAny(normalized, ["hauptfigur", "konflikt", "gesellschaft", "beziehung"]), "Figuren-Welt-Kopplung", "Figuren und Weltkontext sind verbunden.", "Figurenkonflikt im Weltkontext fehlt.", "kompendium", "Hauptfigur + Gegenkraft + gesellschaftliche Norm in einem Block verbinden.", 3));
+      break;
+    case "scene":
+    case "pitchScene":
+      checks.push(makeCheck(hasAny(normalized, ["szene", "status", "entscheidung", "konsequenz"]), "Szenenbeweis im Pitch", "Beispielszene zeigt den Serienkern.", "Beispielszene belegt den Serienkern noch nicht.", "handbuch", "Szene auf Statuswechsel und Konsequenz zuspitzen.", 3));
       break;
     case "juryQuestions":
-      checks.push(
-        makeCheck(
-          countMatches(normalized, ["?"]) >= 3 || countWords(value.split("\n").join(" ? ")) >= 25,
-          "Q&A-Vorbereitung",
-          "Mehrere Rueckfragen sind antizipiert.",
-          "Q&A ist noch zu schmal vorbereitet.",
-          "wikihow",
-          "Drei kritische Fragen + je eine evidenzbasierte Antwort ausformulieren."
-        )
-      );
+      checks.push(makeCheck((value.match(/\?/g) || []).length >= 3 || hasAny(normalized, ["frage 1", "frage 2", "frage 3"]), "Q&A-Vorbereitung", "Mehrere kritische Rueckfragen sind antizipiert.", "Q&A-Vorbereitung zu schmal.", "wikihow", "Mindestens drei kritische Fragen mit je einer belastbaren Antwort schreiben.", 3));
       break;
     default:
-      checks.push(
-        makeCheck(
-          hasAny(normalized, ["weil", "damit", "deshalb", "konsequenz", "entscheidung", "ziel"]),
-          "Begruendungslogik",
-          "Entscheidungen sind begruendet.",
-          "Begruendungen fehlen noch.",
-          "handbuch",
-          "Bei jedem Kernsatz ein 'weil/damit' mitliefern."
-        )
-      );
+      checks.push(makeCheck(hasAny(normalized, ["weil", "damit", "deshalb", "folgt", "konsequenz"]), "Begruendungslogik", "Aussagen sind begruendet.", "Begruendungslogik fehlt.", "handbuch", "Zu jeder Kernaussage eine Ursache-Wirkung-Verbindung ergaenzen.", 2));
   }
 
   if (["phase", "checkpoint", "pitch"].includes(context)) {
     checks.push(
       makeCheck(
-        hasAny(normalized, screenplayTools) || hasAny(normalized, ["plot", "struktur", "szen", "dialog"]),
+        matchedScript.length >= 1 || hasAny(normalized, ["plot", "struktur", "szene", "dialog"]),
         "Drehbuchhandwerk",
-        "Handwerkliche Skriptperspektive ist eingebaut.",
-        "Drehbuchhandwerk bleibt implizit.",
+        `Handwerkliche Begriffe sind eingebettet (${matchedScript.join(", ") || "Plot/Struktur"}).`,
+        "Drehbuchhandwerk bleibt zu implizit.",
         "filmpuls",
-        "Premisse/Plotstruktur/Szenenfunktion kurz explizit benennen."
+        "Mindestens einen handwerklichen Schritt (Premisse/Expose/Treatment/Struktur) konkretisieren.",
+        2
       )
     );
   }
@@ -1398,12 +1714,13 @@ function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words
   if (["phase", "checkpoint", "decision"].includes(context)) {
     checks.push(
       makeCheck(
-        hasAny(normalized, collaborationTokens),
-        "Arbeitskultur und Produktionsrealitaet",
-        "Team- und Produktionsaspekte sind mitgedacht.",
-        "Arbeitskultur fehlt. Verantwortung, Abstimmung oder Ressourcenlogik ergaenzen.",
+        matchedCollab.length >= 1 || hasAny(normalized, ["team", "rolle", "feedback", "abgabe"]),
+        "Arbeitskultur",
+        "Arbeits- und Abstimmungslogik ist adressiert.",
+        "Produktions- und Abstimmungslogik fehlt.",
         "serienschreiben",
-        "Ergaenzen: Wer arbeitet wann mit wem woran und nach welcher Abstimmung?"
+        "Festhalten: Wer arbeitet mit wem bis wann an welchem Zwischenergebnis?",
+        2
       )
     );
   }
@@ -1411,12 +1728,13 @@ function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words
   if (fieldLabel.toLowerCase().includes("drehbuch") || fieldLabel.toLowerCase().includes("szene")) {
     checks.push(
       makeCheck(
-        hasAny(normalized, ["int.", "ext.", "ort", "zeit", "tag", "nacht", "dialog"]),
-        "Szenische Lesefuehrung",
-        "Szene ist formal lesbar und fuehrbar.",
-        "Formale Lesefuehrung fehlt.",
+        hasAny(normalized, ["int", "ext", "ort", "zeit", "tag", "nacht", "dialog"]),
+        "Inszenierbarkeit",
+        "Szene ist als filmische Handlung lesbar.",
+        "Inszenierbare Angaben (Ort/Zeit/Dialog) fehlen.",
         "wikihow",
-        "Ort/Zeit/Dialogstruktur klar trennen, damit die Szene sofort inszenierbar wird."
+        "Ort, Zeit, Handlung, Dialog klar trennen.",
+        2
       )
     );
   }
@@ -1424,20 +1742,69 @@ function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words
   return checks;
 }
 
-function makeCheck(pass, title, detailPass, detailFail, source, fix) {
+function analyzeLinguisticQuality(value, normalized) {
+  const tokens = tokenizeWords(normalized);
+  const alphaTokens = tokens.filter((token) => /[a-zA-ZäöüÄÖÜß]/.test(token));
+  const known = alphaTokens.filter((token) => isKnownWord(token));
+  const knownRatio = alphaTokens.length ? known.length / alphaTokens.length : 0;
+  const avgLen = alphaTokens.length ? alphaTokens.reduce((sum, token) => sum + token.length, 0) / alphaTokens.length : 0;
+  const longConsonant = alphaTokens.filter((token) => /[bcdfghjklmnpqrstvwxyz]{5,}/i.test(token)).length;
+  const sentenceCount = countSentences(value);
+  const hasVerbHint = hasAny(normalized, ["ist", "sind", "wird", "werden", "zeigt", "will", "muss", "soll", "geht", "veraendert", "entwickelt"]);
+
+  const isLikelyNonsense =
+    alphaTokens.length >= 3 &&
+    knownRatio < 0.12 &&
+    avgLen > 6 &&
+    longConsonant >= Math.ceil(alphaTokens.length * 0.35) &&
+    !hasVerbHint &&
+    sentenceCount <= 1;
+
+  return { tokens, alphaTokens, knownRatio, avgLen, sentenceCount, isLikelyNonsense };
+}
+
+function isKnownWord(token) {
+  return COMMON_DE_WORDS.has(token) || THEME_TERMS.includes(token) || CONFLICT_TERMS.includes(token) || SERIAL_TERMS.includes(token) || VISUAL_TERMS.includes(token) || SCRIPT_TERMS.includes(token) || COLLAB_TERMS.includes(token) || PROJECT_IDEAS.some((idea) => idea.toLowerCase().includes(token));
+}
+
+function tokenizeWords(normalized) {
+  return String(normalized)
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+}
+
+function countSentences(value) {
+  const byPunctuation = String(value).split(/[.!?]/).map((part) => part.trim()).filter(Boolean).length;
+  if (byPunctuation > 0) return byPunctuation;
+  return String(value).split("\n").map((line) => line.trim()).filter(Boolean).length;
+}
+
+function getMatchedTerms(normalized, terms) {
+  return terms.filter((term) => normalized.includes(term));
+}
+
+function computeWeightedScore(checks) {
+  const total = checks.reduce((sum, check) => sum + (check.weight || 1), 0);
+  const done = checks.reduce((sum, check) => sum + (check.pass ? check.weight || 1 : 0), 0);
+  return Math.round((done / Math.max(total, 1)) * 100);
+}
+
+function makeCheck(pass, title, detailPass, detailFail, source, fix, weight = 1) {
   return {
     pass,
     title,
     detail: pass ? detailPass : detailFail,
     source,
-    fix
+    fix,
+    weight
   };
 }
 
 function normalizeForCheck(value) {
   return String(value || "")
     .toLowerCase()
-    .replace(/[^\w\s\.\-\?\!]/g, " ")
+    .replace(/[^\p{L}\p{N}\s.\-?!]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
