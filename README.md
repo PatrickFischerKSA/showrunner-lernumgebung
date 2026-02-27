@@ -59,6 +59,8 @@ npx serve .
 
 Dann im Browser die angezeigte URL oeffnen.
 
+Hinweis: Wenn bereits eine aeltere Version per Service Worker aktiv war, Seite einmal hart neu laden (`Cmd+Shift+R` / `Ctrl+F5`).
+
 ## Deployment auf GitHub Pages
 
 1. Repository nach GitHub pushen.

@@ -1,9 +1,9 @@
 const STORAGE_KEY = "showrunner_lab_v1";
-const VISUALS_KEY = "showrunner_visuals_v2";
+const VISUALS_KEY = "showrunner_visuals_v3";
 const MATERIAL_DB = "showrunner_materials_v1";
 const MATERIAL_STORE = "materials";
 const MATERIAL_ARCHIVE_TYPE = "showrunner-materials-archive";
-const VISUAL_DEFAULTS = { visibility: 88, cardOpacity: 54 };
+const VISUAL_DEFAULTS = { visibility: 95, cardOpacity: 42 };
 
 const META_FIELDS = [
   { key: "projectTitle", label: "Projekttitel", type: "text", placeholder: "z. B. Die Grenzen der Freiheit" },
@@ -879,13 +879,13 @@ function applyVisualSettings(settings) {
   const visibilityN = settings.visibility / 100;
   const root = document.documentElement;
 
-  const blur = 2.3 - visibilityN * 1.9;
-  const brightness = 1 + visibilityN * 0.7;
-  const saturate = 1 + visibilityN * 0.42;
-  const vignetteOpacity = 0.3 - visibilityN * 0.28;
-  const gradientOpacity = 0.24 - visibilityN * 0.2;
+  const blur = 1.9 - visibilityN * 1.7;
+  const brightness = 1.02 + visibilityN * 0.82;
+  const saturate = 1.04 + visibilityN * 0.5;
+  const vignetteOpacity = 0.26 - visibilityN * 0.24;
+  const gradientOpacity = 0.18 - visibilityN * 0.16;
 
-  root.style.setProperty("--video-blur", `${Math.max(0.45, blur).toFixed(2)}px`);
+  root.style.setProperty("--video-blur", `${Math.max(0.2, blur).toFixed(2)}px`);
   root.style.setProperty("--video-brightness", `${brightness.toFixed(2)}`);
   root.style.setProperty("--video-saturate", `${saturate.toFixed(2)}`);
   root.style.setProperty("--vignette-opacity", `${Math.max(0.02, vignetteOpacity).toFixed(2)}`);
@@ -1255,9 +1255,35 @@ function dataURLToBlob(dataURL) {
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   if (!window.location.protocol.startsWith("http")) return;
-  navigator.serviceWorker.register("./sw.js").catch(() => {
-    // no-op: app works without SW
-  });
+  const reloadFlag = "showrunner_sw_reloaded_v1";
+  navigator.serviceWorker
+    .register("./sw.js")
+    .then((registration) => {
+      registration.update().catch(() => undefined);
+
+      if (registration.waiting) {
+        registration.waiting.postMessage({ type: "SKIP_WAITING" });
+      }
+
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        if (!worker) return;
+        worker.addEventListener("statechange", () => {
+          if (worker.state === "installed" && navigator.serviceWorker.controller) {
+            worker.postMessage({ type: "SKIP_WAITING" });
+          }
+        });
+      });
+
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (sessionStorage.getItem(reloadFlag) === "1") return;
+        sessionStorage.setItem(reloadFlag, "1");
+        window.location.reload();
+      });
+    })
+    .catch(() => {
+      // no-op: app works without SW
+    });
 }
 
 function clampNumber(value, min, max, fallback) {
@@ -1509,28 +1535,34 @@ function buildFieldFeedback(fieldKey, fieldLabel, rawValue, context) {
   const checks = [];
 
   const language = analyzeLinguisticQuality(value, normalized);
+  const plausibilityPass = !language.isLikelyNonsense;
+  const languagePassDetail = `Text wirkt sprachlich konsistent (Signalwert ${language.qualitySignal}/100).`;
+  const languageFailDetail =
+    language.nonsenseSignals.length > 0
+      ? `Text wirkt unplausibel (${language.nonsenseSignals.join(", ")}).`
+      : "Text wirkt sprachlich unplausibel.";
   checks.push(
     makeCheck(
-      !language.isLikelyNonsense,
+      plausibilityPass,
       "Sprachliche Plausibilitaet",
-      `Text wirkt sprachlich konsistent (Erkennungsquote ${Math.round(language.knownRatio * 100)}%).`,
-      "Text wirkt zufaellig oder unplausibel. Bitte in klaren, bedeutungsvollen Saetzen neu formulieren.",
+      languagePassDetail,
+      languageFailDetail,
       "kompendium",
-      "Jeden Satz als Aussage + Begruendung schreiben, keine Zufallssilben.",
-      3
+      "Neu formulieren: Aussage + Begruendung + Konsequenz, keine Zufallssilben oder Keyboard-Muster.",
+      4
     )
   );
 
-  const minWords = context === "meta" ? 1 : 10;
+  const minWords = getMinimumWords(fieldKey, context);
   checks.push(
     makeCheck(
       words >= minWords,
       "Ausarbeitungstiefe",
-      `Umfang reicht fuer eine Beurteilung (${words} Woerter).`,
-      `Zu knapp (${words} Woerter). Feld braucht mehr Kontext und Entscheidungstiefe.`,
+      `Umfang reicht fuer eine Beurteilung (${words}/${minWords}+ Woerter).`,
+      `Zu knapp (${words}/${minWords} Woerter). Feld braucht mehr Kontext und Entscheidungstiefe.`,
       "kompendium",
-      "Mindestens zwei konkrete Saetze mit Ursache-Wirkung und Folge schreiben.",
-      2
+      `Mindestens ${Math.max(minWords, 8)} Woerter mit Ursache-Wirkung und Folge schreiben.`,
+      3
     )
   );
 
@@ -1548,11 +1580,11 @@ function buildFieldFeedback(fieldKey, fieldLabel, rawValue, context) {
     );
   }
 
-  checks.push(...buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words, context));
+  checks.push(...buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words, context, language));
 
   let score = computeWeightedScore(checks);
-  if (language.isLikelyNonsense) score = Math.min(score, 20);
-  if (words < 4 && context !== "meta") score = Math.min(score, 35);
+  if (language.isLikelyNonsense) score = Math.min(score, 12);
+  if (words < minWords) score = Math.min(score, context === "meta" ? 55 : 40);
 
   const level = score >= 80 ? "strong" : score >= 55 ? "medium" : "weak";
   const levelLabel = score >= 80 ? "hoch differenziert" : score >= 55 ? "ausbaufaehig" : "grundlegend nachschaerfen";
@@ -1567,7 +1599,16 @@ function buildFieldFeedback(fieldKey, fieldLabel, rawValue, context) {
   return { score, level, levelLabel, checks, nextSteps, sources };
 }
 
-function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words, context) {
+function getMinimumWords(fieldKey, context) {
+  if (fieldKey === "startDate" || fieldKey === "projectIdea") return 1;
+  if (fieldKey === "teamName" || fieldKey === "className") return 1;
+  if (fieldKey === "projectTitle") return 2;
+  if (context === "meta") return 5;
+  if (context === "decision") return 10;
+  return 12;
+}
+
+function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words, context, language) {
   const checks = [];
   const matchedTheme = getMatchedTerms(normalized, THEME_TERMS);
   const matchedSerial = getMatchedTerms(normalized, SERIAL_TERMS);
@@ -1578,8 +1619,29 @@ function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words
   switch (fieldKey) {
     case "projectTitle":
       checks.push(makeCheck(words >= 2 && words <= 10, "Titel-Schaerfe", "Titel ist knapp und fokussiert.", "Titel ist zu vage oder unklar.", "kompendium", "Einen klaren Konfliktbegriff im Titel verankern (2-10 Woerter).", 2));
+      checks.push(
+        makeCheck(
+          language.qualitySignal >= 60 && !language.isLikelyNonsense,
+          "Sprachliche Tragfaehigkeit",
+          "Titel ist sprachlich tragfaehig und praesentierbar.",
+          "Titel ist sprachlich nicht praesentierbar (Zufallsmuster/fehlende Semantik).",
+          "kompendium",
+          "Titel als sinnvollen Satzkern mit Thema und Konflikt neu formulieren.",
+          3
+        )
+      );
       checks.push(makeCheck(matchedTheme.length >= 1 || hasAny(normalized, ["jenny", "meier", "1832"]), "Thematischer Anker", `Themenanker vorhanden (${matchedTheme.join(", ") || "JENNY-Kontext"}).`, "Themenanker fehlt.", "handbuch", "Mindestens ein Leitmotiv (z. B. Freiheit, Zugehoerigkeit, Macht) im Titel benennen.", 3));
-      checks.push(makeCheck(!hasAny(normalized, ["asdf", "qwer", "lorem", "xxx", "testtest"]), "Glaubwuerdigkeit", "Kein Platzhalter- oder Zufallstitel erkannt.", "Titel enthaelt Platzhalter oder Zufallsmuster.", "kompendium", "Titel durch inhaltlich tragfaehige Formulierung ersetzen.", 3));
+      checks.push(
+        makeCheck(
+          !hasAny(normalized, ["asdf", "qwer", "lorem", "xxx", "testtest"]) && !language.hasKeyboardMash && language.gibberishTokenCount === 0,
+          "Glaubwuerdigkeit",
+          "Kein Platzhalter- oder Zufallstitel erkannt.",
+          "Titel enthaelt Platzhalter/Zufallsmuster oder sprachlich unplausible Token.",
+          "kompendium",
+          "Titel in bedeutungsvoller Sprache neu formulieren: Konflikt + Thema + Perspektive.",
+          4
+        )
+      );
       break;
     case "teamName":
     case "className":
@@ -1749,18 +1811,61 @@ function analyzeLinguisticQuality(value, normalized) {
   const knownRatio = alphaTokens.length ? known.length / alphaTokens.length : 0;
   const avgLen = alphaTokens.length ? alphaTokens.reduce((sum, token) => sum + token.length, 0) / alphaTokens.length : 0;
   const longConsonant = alphaTokens.filter((token) => /[bcdfghjklmnpqrstvwxyz]{5,}/i.test(token)).length;
+  const lowVowelTokens = alphaTokens.filter((token) => token.length >= 8 && countVowels(token) <= 2).length;
+  const repeatedPatternTokens = alphaTokens.filter((token) => /(.)\1{2,}/.test(token) || /([a-z]{2,4})\1{1,}/i.test(token)).length;
+  const keyboardMashTokens = alphaTokens.filter((token) => /(asdf|qwer|yxcv|sdfg|dfgh|fghj|ghjk|hjkl|jkl;|lkj)/i.test(token)).length;
+  const gibberishTokenCount = alphaTokens.filter((token) => {
+    if (isKnownWord(token)) return false;
+    return token.length >= 7 && (countVowels(token) <= 2 || /[bcdfghjklmnpqrstvwxyz]{4,}/i.test(token));
+  }).length;
   const sentenceCount = countSentences(value);
   const hasVerbHint = hasAny(normalized, ["ist", "sind", "wird", "werden", "zeigt", "will", "muss", "soll", "geht", "veraendert", "entwickelt"]);
+  const suspiciousRatio = alphaTokens.length ? gibberishTokenCount / alphaTokens.length : 0;
+
+  const nonsenseSignals = [];
+  if (knownRatio < 0.08 && alphaTokens.length >= 2) nonsenseSignals.push("kaum bekannte Woerter");
+  if (keyboardMashTokens >= 1) nonsenseSignals.push("Keyboard-Muster");
+  if (lowVowelTokens >= Math.ceil(Math.max(alphaTokens.length, 1) * 0.5) && alphaTokens.length >= 2) {
+    nonsenseSignals.push("vokalarmes Tokenmuster");
+  }
+  if (repeatedPatternTokens >= 1) nonsenseSignals.push("Wortmuster-Wiederholung");
+  if (longConsonant >= Math.ceil(Math.max(alphaTokens.length, 1) * 0.5) && alphaTokens.length >= 2) {
+    nonsenseSignals.push("lange Konsonantenketten");
+  }
+  if (sentenceCount <= 1 && !hasVerbHint && alphaTokens.length >= 3) nonsenseSignals.push("fehlende Satzstruktur");
 
   const isLikelyNonsense =
-    alphaTokens.length >= 3 &&
-    knownRatio < 0.12 &&
-    avgLen > 6 &&
-    longConsonant >= Math.ceil(alphaTokens.length * 0.35) &&
-    !hasVerbHint &&
-    sentenceCount <= 1;
+    alphaTokens.length >= 2 &&
+    (keyboardMashTokens >= 1 ||
+      (knownRatio === 0 && gibberishTokenCount >= 1) ||
+      (suspiciousRatio >= 0.6 && knownRatio < 0.2 && !hasVerbHint) ||
+      (nonsenseSignals.length >= 3 && avgLen > 6));
 
-  return { tokens, alphaTokens, knownRatio, avgLen, sentenceCount, isLikelyNonsense };
+  const qualitySignal = Math.max(
+    0,
+    Math.round(
+      100 -
+        (gibberishTokenCount * 18 +
+          keyboardMashTokens * 30 +
+          repeatedPatternTokens * 12 +
+          Math.max(0, 35 - Math.round(knownRatio * 100)) +
+          (sentenceCount <= 1 && !hasVerbHint ? 12 : 0))
+    )
+  );
+
+  return {
+    tokens,
+    alphaTokens,
+    knownRatio,
+    avgLen,
+    sentenceCount,
+    hasVerbHint,
+    hasKeyboardMash: keyboardMashTokens > 0,
+    gibberishTokenCount,
+    nonsenseSignals,
+    qualitySignal,
+    isLikelyNonsense
+  };
 }
 
 function isKnownWord(token) {
@@ -1772,6 +1877,11 @@ function tokenizeWords(normalized) {
     .split(/\s+/)
     .map((token) => token.trim())
     .filter(Boolean);
+}
+
+function countVowels(token) {
+  const matches = String(token).match(/[aeiouyäöü]/gi);
+  return matches ? matches.length : 0;
 }
 
 function countSentences(value) {

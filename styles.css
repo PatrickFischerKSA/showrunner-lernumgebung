@@ -1,6 +1,6 @@
 :root {
   --bg: #06141a;
-  --card-alpha: 0.54;
+  --card-alpha: 0.42;
   --ink: #edf3ef;
   --muted: #c2cec8;
   --line: rgba(210, 226, 219, 0.2);
@@ -8,11 +8,11 @@
   --accent-2: #9dd99a;
   --danger: #ff7a5b;
   --shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
-  --video-blur: 1.1px;
-  --video-brightness: 1.3;
-  --video-saturate: 1.22;
-  --vignette-opacity: 0.11;
-  --gradient-opacity: 0.09;
+  --video-blur: 0.45px;
+  --video-brightness: 1.48;
+  --video-saturate: 1.35;
+  --vignette-opacity: 0.05;
+  --gradient-opacity: 0.03;
 }
 
 * {
@@ -78,7 +78,7 @@ a {
   padding: 1.5rem 1.2rem;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: linear-gradient(140deg, rgba(8, 26, 34, 0.56), rgba(15, 32, 28, 0.46));
+  background: linear-gradient(140deg, rgba(8, 26, 34, 0.42), rgba(15, 32, 28, 0.33));
   box-shadow: var(--shadow);
   animation: rise 0.75s ease;
 }
@@ -126,7 +126,7 @@ a {
   flex-wrap: wrap;
   border-radius: 14px;
   border: 1px solid var(--line);
-  background: rgba(6, 18, 24, 0.66);
+  background: rgba(6, 18, 24, 0.5);
   backdrop-filter: blur(6px);
 }
 
@@ -198,7 +198,7 @@ select {
   width: 100%;
   border-radius: 10px;
   border: 1px solid rgba(201, 225, 211, 0.24);
-  background: rgba(3, 12, 17, 0.72);
+  background: rgba(3, 12, 17, 0.58);
   color: var(--ink);
   padding: 0.6rem 0.7rem;
   font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
