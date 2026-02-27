@@ -15,12 +15,14 @@ Diese Lernumgebung ist als direkt deploybares Static-Webprojekt gebaut.
 - 6 verpflichtende Checkpoints mit standardisiertem Berichtsraster
 - Showrunner Decision System (diagnostischer Workflow)
 - Selbstwirksamkeits-Loop pro Phase (Ziel, Strategie, Hindernis, Hilfe, Reflexion)
+- Autofeedback pro Feld (qualitative Diagnose + konkrete Nachschaerfungsschritte)
 - Import/Export:
   - Gesamtprojekt als JSON
   - Teilschritt (pro Phase) als JSON
   - Einzelner Checkpoint als JSON
   - Dossier, Checkpoints und Pitch-Manuskript als Markdown
 - Geblurrter Videohintergrund (`assets/jenny_background.mp4`)
+- Integrierte Wissensbasis: Filmpuls, WikiHow und `assets/Serienschreiben.pdf`
 
 ## Projektstruktur
 

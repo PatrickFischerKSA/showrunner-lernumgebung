@@ -22,16 +22,16 @@ const PROJECT_IDEAS = [
 ];
 
 const TIMELINE = [
-  "Woche 1: Projektstart, Rollen, These, erste Logline (Output: Checkpoint 1)",
-  "Woche 2: Themenvertiefung und gesellschaftliche Relevanz (Output: Series Statement)",
-  "Woche 3: Figurenentwicklung I (Wunde, Beduerfnis, Ziel)",
-  "Woche 4: Figurenentwicklung II und Konfliktnetz (Output: Checkpoint 2)",
-  "Woche 5: Serien-Engine testen und Staffelthese formulieren",
-  "Woche 6: Staffelarchitektur und Wendepunkte (Output: Checkpoint 3)",
-  "Woche 7: Visuelles Konzept (Kamera, Licht, Raum) (Output: Checkpoint 4)",
-  "Woche 8: Drehbuchentwicklung, Szenenrhythmus (Output: Checkpoint 5)",
-  "Woche 9: Koharenzpruefung und Ueberarbeitung",
-  "Woche 10: Pitch-Vorbereitung und Probe (Output: Checkpoint 6)"
+  "Phase 1: Projektstart, Rollen, These, erste Logline (Output: Checkpoint 1)",
+  "Phase 2: Themenvertiefung und gesellschaftliche Relevanz (Output: Series Statement)",
+  "Phase 3: Figurenentwicklung I (Wunde, Beduerfnis, Ziel)",
+  "Phase 4: Figurenentwicklung II und Konfliktnetz (Output: Checkpoint 2)",
+  "Phase 5: Serien-Engine testen und Staffelthese formulieren",
+  "Phase 6: Staffelarchitektur und Wendepunkte (Output: Checkpoint 3)",
+  "Phase 7: Visuelles Konzept (Kamera, Licht, Raum) (Output: Checkpoint 4)",
+  "Phase 8: Drehbuchentwicklung, Szenenrhythmus (Output: Checkpoint 5)",
+  "Phase 9: Koharenzpruefung und Ueberarbeitung",
+  "Phase 10: Pitch-Vorbereitung und Probe (Output: Checkpoint 6)"
 ];
 
 const PHASES = [
@@ -45,7 +45,7 @@ const PHASES = [
       { key: "teamRoles", label: "Rollenverteilung (Showrunner, Head of Story, Character Lead, Visual Lead)", placeholder: "Wer uebernimmt welche Rolle und warum?" },
       { key: "textCore", label: "Textkern: Was ist der gesellschaftliche Konflikt im Roman?", placeholder: "3-5 Saetze" },
       { key: "adaptationRule", label: "Regel fuer die Adaption: Was wird NICHT nur nacherzaehlt?", placeholder: "Wir zeigen den Konflikt durch ..." },
-      { key: "microGoal", label: "Mikroziel fuer diese Woche", placeholder: "Bis Ende Woche schaffen wir ..." }
+      { key: "microGoal", label: "Mikroziel fuer diese Phase", placeholder: "Bis Ende Phase schaffen wir ..." }
     ],
     tasks: {
       basis: [
@@ -66,7 +66,7 @@ const PHASES = [
     title: "Phase 1 - Serien-DNA und Themenaussage",
     goal: "Warum ist es eine Serie und nicht nur ein Film?",
     output: "Series Statement + serielle Engine",
-    time: "1 Woche",
+    time: "1 Phase",
     fields: [
       { key: "seriesStatement", label: "Series Statement: Diese Serie zeigt, dass ...", placeholder: "Vollstaendiger Satz ohne Ereignisaufzaehlung" },
       { key: "centralConflict", label: "Dauerhafter Konflikt (Figur will X, Welt verlangt Y)", placeholder: "X vs Y" },
@@ -92,7 +92,7 @@ const PHASES = [
     title: "Phase 2 - Figurenbibel und Konfliktnetz",
     goal: "Figuren so bauen, dass Konflikte ohne Zufall entstehen.",
     output: "Figurenbibel + Beziehungsdiagramm",
-    time: "1-2 Wochen",
+    time: "1-2 Phasen",
     fields: [
       { key: "mainFigure", label: "Hauptfigur: Wunde, Beduerfnis, Ziel, Angst, Selbsttaeuschung", placeholder: "Kurzprofil in klaren Stichpunkten" },
       { key: "antagonisticForce", label: "Gegenkraft: Wer oder was setzt den staerksten Widerstand?", placeholder: "Person, Institution oder Norm" },
@@ -118,7 +118,7 @@ const PHASES = [
     title: "Phase 3 - Welt, Stil, Kamera, Licht, Ton",
     goal: "Aesthetik als Bedeutungssystem definieren.",
     output: "Regelkatalog fuer visuelle und akustische Gestaltung",
-    time: "1 Woche",
+    time: "1 Phase",
     fields: [
       { key: "worldRules", label: "Weltregeln: Institutionen, Macht, soziale Codes", placeholder: "Welche Regeln bestimmen Verhalten?" },
       { key: "spaceLogic", label: "Raumlogik: Welche Orte tragen welche Funktion?", placeholder: "z. B. Behorde = Distanz" },
@@ -144,7 +144,7 @@ const PHASES = [
     title: "Phase 4 - Staffelarchitektur und Episodenplan",
     goal: "Aus der These eine tragfaehige Staffel bauen.",
     output: "Staffeluebersicht + Episodenmatrix",
-    time: "1 Woche",
+    time: "1 Phase",
     fields: [
       { key: "seasonThesis", label: "Staffelthese", placeholder: "Moralische Bewegung der Staffel" },
       { key: "turningPoints", label: "Zentrale Wendepunkte", placeholder: "Mindestens 3 klare Kippmomente" },
@@ -170,7 +170,7 @@ const PHASES = [
     title: "Phase 5 - Drehbuchausschnitt (3-5 Seiten)",
     goal: "Dialoge und Handlung ueber Statuswechsel organisieren.",
     output: "Drehbuchausschnitt + Szenenanalyse",
-    time: "1 Woche",
+    time: "1 Phase",
     fields: [
       { key: "sceneGoal", label: "Szenenziel: Was veraendert sich sozial?", placeholder: "Statuswechsel in einem Satz" },
       { key: "sceneStructure", label: "Struktur (Ziel -> Widerstand -> Entscheidung -> Konsequenz)", placeholder: "Kurze Szenenmechanik" },
@@ -223,7 +223,7 @@ const PHASES = [
     title: "Phase 7 - Pitch-Design und Probe",
     goal: "Konzept auf Jury-Niveau praesentierbar machen.",
     output: "10-Minuten-Pitch + Q&A-Vorbereitung",
-    time: "1 Woche",
+    time: "1 Phase",
     fields: [
       { key: "pitchHook", label: "Pitch-Einstieg in 1 Minute", placeholder: "These + Relevanz + Neugier" },
       { key: "pitchWorldFigures", label: "Welt und Figuren (3 Minuten)", placeholder: "Kernkonflikt und Kontext" },
@@ -358,6 +358,14 @@ const SELF_FIELDS = [
   { key: "review", label: "Kurzreflexion nach Abschluss" }
 ];
 
+const FEEDBACK_SOURCES = {
+  handbuch: "Handbuch: Serien-DNA, Konfliktmechanik, Statuswechsel, visuelle Regeln",
+  kompendium: "Unterrichtskompendium: Adaption als Interpretation, Leitfrage/Konsequenz, Pitchstruktur",
+  filmpuls: "Filmpuls: Premisse, Expose/Treatment, Szenenfokus, Show-dont-tell",
+  wikihow: "WikiHow-Prinzipien: Serienformat, Figurenkonsistenz, Script-Format, Ueberarbeitung",
+  serienschreiben: "Serienschreiben: Kollaboration, Arbeitsteilung, Produktions- und Arbeitskultur"
+};
+
 let state = loadState() || createInitialState();
 let activeTab = "dashboard";
 let activePhase = PHASES[0].id;
@@ -474,8 +482,12 @@ function renderMetaFields() {
 
     input.value = state.meta[field.key] || "";
     input.dataset.meta = field.key;
+    input.dataset.fieldKey = field.key;
+    input.dataset.fieldLabel = field.label;
+    input.dataset.feedbackContext = "meta";
     input.addEventListener("input", onMetaChange);
     label.appendChild(input);
+    label.appendChild(createFeedbackNode(buildFieldFeedback(field.key, field.label, String(input.value || ""), "meta")));
     box.appendChild(label);
   });
 
@@ -499,6 +511,7 @@ function renderMetaFields() {
 function onMetaChange(event) {
   const key = event.target.dataset.meta;
   state.meta[key] = event.target.value;
+  refreshFeedbackForInput(event.target);
   saveAndRefresh();
 }
 
@@ -536,9 +549,12 @@ function renderPhaseContent() {
       (field) => `
       <label>
         ${field.label}
-        <textarea data-phase-field="${phase.id}" data-field-key="${field.key}" placeholder="${field.placeholder || ""}">${escapeHtml(
+        <textarea data-phase-field="${phase.id}" data-field-key="${field.key}" data-field-label="${escapeHtml(
+          field.label
+        )}" data-feedback-context="phase" placeholder="${field.placeholder || ""}">${escapeHtml(
         phaseState.fields[field.key] || ""
       )}</textarea>
+        ${renderFieldFeedbackHTML(field.key, field.label, phaseState.fields[field.key] || "", "phase")}
       </label>
     `
     )
@@ -562,7 +578,10 @@ function renderPhaseContent() {
     (field) => `
     <label>
       ${field.label}
-      <textarea data-phase-self="${phase.id}" data-self-key="${field.key}">${escapeHtml(phaseState.self[field.key] || "")}</textarea>
+      <textarea data-phase-self="${phase.id}" data-self-key="${field.key}" data-field-label="${escapeHtml(
+        field.label
+      )}" data-feedback-context="self">${escapeHtml(phaseState.self[field.key] || "")}</textarea>
+      ${renderFieldFeedbackHTML(field.key, field.label, phaseState.self[field.key] || "", "self")}
     </label>
   `
   ).join("");
@@ -607,6 +626,7 @@ function onPhaseInput(event) {
   if (event.target.dataset.selfKey) {
     state.phases[phaseId].self[event.target.dataset.selfKey] = event.target.value;
   }
+  refreshFeedbackForInput(event.target);
   saveAndRefresh();
 }
 
@@ -645,9 +665,12 @@ function renderCheckpoints() {
       (field) => `
       <label>
         ${field.label}
-        <textarea data-checkpoint-index="${index}" data-checkpoint-key="${field.key}">${escapeHtml(
+        <textarea data-checkpoint-index="${index}" data-checkpoint-key="${field.key}" data-field-label="${escapeHtml(
+          field.label
+        )}" data-feedback-context="checkpoint">${escapeHtml(
         state.checkpoints[index][field.key] || ""
       )}</textarea>
+        ${renderFieldFeedbackHTML(field.key, field.label, state.checkpoints[index][field.key] || "", "checkpoint")}
       </label>
     `
     ).join("");
@@ -671,6 +694,7 @@ function renderCheckpoints() {
       const idx = Number(event.target.dataset.checkpointIndex);
       const key = event.target.dataset.checkpointKey;
       state.checkpoints[idx][key] = event.target.value;
+      refreshFeedbackForInput(event.target);
       saveAndRefresh();
     });
   });
@@ -721,21 +745,29 @@ function paintDecisionCard() {
     <p><strong>Massnahme:</strong> ${entry.measure}</p>
     <label>
       Team-Notizen zur Diagnose
-      <textarea id="decision-notes">${escapeHtml(state.decision.notes || "")}</textarea>
+      <textarea id="decision-notes" data-field-key="decisionNotes" data-field-label="Team-Notizen zur Diagnose" data-feedback-context="decision">${escapeHtml(
+        state.decision.notes || ""
+      )}</textarea>
+      ${renderFieldFeedbackHTML("decisionNotes", "Team-Notizen zur Diagnose", state.decision.notes || "", "decision")}
     </label>
     <label>
       Verbindlicher Aktionsplan
-      <textarea id="decision-plan">${escapeHtml(state.decision.actionPlan || "")}</textarea>
+      <textarea id="decision-plan" data-field-key="decisionActionPlan" data-field-label="Verbindlicher Aktionsplan" data-feedback-context="decision">${escapeHtml(
+        state.decision.actionPlan || ""
+      )}</textarea>
+      ${renderFieldFeedbackHTML("decisionActionPlan", "Verbindlicher Aktionsplan", state.decision.actionPlan || "", "decision")}
     </label>
   `;
 
   document.getElementById("decision-notes").addEventListener("input", (event) => {
     state.decision.notes = event.target.value;
+    refreshFeedbackForInput(event.target);
     saveAndRefresh();
   });
 
   document.getElementById("decision-plan").addEventListener("input", (event) => {
     state.decision.actionPlan = event.target.value;
+    refreshFeedbackForInput(event.target);
     saveAndRefresh();
   });
 }
@@ -746,7 +778,10 @@ function renderPitchFields() {
     (field) => `
     <label>
       ${field.label}
-      <textarea data-pitch-key="${field.key}">${escapeHtml(state.pitch[field.key] || "")}</textarea>
+      <textarea data-pitch-key="${field.key}" data-field-label="${escapeHtml(field.label)}" data-feedback-context="pitch">${escapeHtml(
+        state.pitch[field.key] || ""
+      )}</textarea>
+      ${renderFieldFeedbackHTML(field.key, field.label, state.pitch[field.key] || "", "pitch")}
     </label>
   `
   ).join("");
@@ -754,6 +789,7 @@ function renderPitchFields() {
   box.querySelectorAll("textarea").forEach((textarea) => {
     textarea.addEventListener("input", (event) => {
       state.pitch[event.target.dataset.pitchKey] = event.target.value;
+      refreshFeedbackForInput(event.target);
       saveAndRefresh();
     });
   });
@@ -960,6 +996,473 @@ function generatePitchMarkdown() {
   lines.push("");
   lines.push(`_Exportiert am ${new Date().toLocaleString("de-CH")}_`);
   return lines.join("\n");
+}
+
+function createFeedbackNode(analysis) {
+  const wrapper = document.createElement("div");
+  wrapper.className = `autofeedback ${analysis.level}`;
+  wrapper.innerHTML = buildFeedbackInnerHTML(analysis);
+  return wrapper;
+}
+
+function renderFieldFeedbackHTML(fieldKey, fieldLabel, value, context) {
+  const analysis = buildFieldFeedback(fieldKey, fieldLabel, value, context);
+  return `<div class="autofeedback ${analysis.level}">${buildFeedbackInnerHTML(analysis)}</div>`;
+}
+
+function buildFeedbackInnerHTML(analysis) {
+  const checksHtml = analysis.checks
+    .map((check) => {
+      const marker = check.pass ? "[OK]" : "[!]";
+      return `<li>${marker} <strong>${escapeHtml(check.title)}:</strong> ${escapeHtml(check.detail)}</li>`;
+    })
+    .join("");
+
+  const nextSteps =
+    analysis.nextSteps.length > 0
+      ? `<div class="af-next"><strong>Naechster Feinschliff:</strong> ${escapeHtml(analysis.nextSteps.join(" | "))}</div>`
+      : `<div class="af-next"><strong>Naechster Feinschliff:</strong> Feinschliff im Teamtest und laut vorlesen.</div>`;
+
+  const sourceText =
+    analysis.sources.length > 0
+      ? analysis.sources.map((sourceKey) => FEEDBACK_SOURCES[sourceKey]).join(" ; ")
+      : FEEDBACK_SOURCES.handbuch;
+
+  return `
+    <div class="af-head">
+      <strong>Autofeedback: ${analysis.score}/100</strong>
+      <span>${analysis.levelLabel}</span>
+    </div>
+    <ul class="af-list">${checksHtml}</ul>
+    ${nextSteps}
+    <div class="af-source">Basis: ${escapeHtml(sourceText)}</div>
+  `;
+}
+
+function refreshFeedbackForInput(input) {
+  const label = input.closest("label");
+  if (!label) return;
+  const box = label.querySelector(".autofeedback");
+  if (!box) return;
+
+  const fieldKey = getInputFieldKey(input);
+  const fieldLabel = input.dataset.fieldLabel || fieldKey;
+  const context = input.dataset.feedbackContext || "phase";
+  const analysis = buildFieldFeedback(fieldKey, fieldLabel, input.value || "", context);
+
+  box.className = `autofeedback ${analysis.level}`;
+  box.innerHTML = buildFeedbackInnerHTML(analysis);
+}
+
+function getInputFieldKey(input) {
+  return (
+    input.dataset.fieldKey ||
+    input.dataset.selfKey ||
+    input.dataset.meta ||
+    input.dataset.checkpointKey ||
+    input.dataset.pitchKey ||
+    "field"
+  );
+}
+
+function buildFieldFeedback(fieldKey, fieldLabel, rawValue, context) {
+  const value = String(rawValue || "").trim();
+  const normalized = normalizeForCheck(value);
+  const words = countWords(value);
+  const checks = [];
+
+  const minimumWords = context === "meta" ? 1 : 12;
+  checks.push(
+    makeCheck(
+      words >= minimumWords,
+      "Inhaltstiefe",
+      `Umfang ist tragfaehig (${words} Woerter).`,
+      `Noch zu knapp (${words} Woerter). Erweitern mit konkreten Entscheidungen, nicht nur Schlagwoertern.`,
+      "kompendium",
+      "Mindestens 2-4 konkrete Saetze mit Belegen und Konsequenz formulieren."
+    )
+  );
+
+  if (["phase", "checkpoint", "pitch", "decision"].includes(context)) {
+    checks.push(
+      makeCheck(
+        hasAny(normalized, ["entscheidung", "konsequenz", "konflikt", "dilemma", "widerstand"]),
+        "Dramaturgischer Kern",
+        "Konflikt/Entscheidung ist erkennbar.",
+        "Dramaturgischer Kern noch weich. Konflikt + Entscheidung + Konsequenz explizit benennen.",
+        "handbuch",
+        "Formel direkt einbauen: Wer will was, was steht im Weg, welche Entscheidung folgt?"
+      )
+    );
+  }
+
+  checks.push(...buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words, context));
+
+  const passed = checks.filter((check) => check.pass).length;
+  const score = Math.round((passed / Math.max(checks.length, 1)) * 100);
+  const level = score >= 80 ? "strong" : score >= 55 ? "medium" : "weak";
+  const levelLabel = score >= 80 ? "hoch differenziert" : score >= 55 ? "ausbaufaehig" : "grundlegend nachschaerfen";
+  const nextSteps = checks.filter((check) => !check.pass).map((check) => check.fix).filter(Boolean).slice(0, 3);
+  const sources = [...new Set(checks.map((check) => check.source).filter(Boolean))];
+
+  return { score, level, levelLabel, checks, nextSteps, sources };
+}
+
+function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words, context) {
+  const checks = [];
+  const screenplayTools = ["expose", "treatment", "premisse", "3-akt", "turning", "show dont tell", "subtext"];
+  const serialTokens = ["episode", "staffel", "leitfrage", "cliffhanger", "wiederkehr", "arc"];
+  const visualTokens = ["kamera", "nahaufnahme", "totale", "licht", "farbe", "raum", "ton", "schnitt", "blick", "blocking"];
+  const collaborationTokens = ["showrunner", "head of story", "character", "visual", "writer", "room", "rolle", "feedback", "arbeitsteil", "abgabe"];
+
+  switch (fieldKey) {
+    case "projectTitle":
+      checks.push(
+        makeCheck(
+          words >= 2,
+          "Projektfokus",
+          "Titel ist als erzaehlerischer Fokus benannt.",
+          "Titel noch zu vage oder zu kurz.",
+          "kompendium",
+          "Titel mit Konfliktkern schaerfen (z. B. Freiheit vs Zugehoerigkeit)."
+        )
+      );
+      break;
+    case "teamName":
+    case "className":
+      checks.push(
+        makeCheck(
+          words >= 1,
+          "Projektverankerung",
+          "Organisationseintrag ist vorhanden.",
+          "Eintrag fehlt.",
+          "serienschreiben",
+          "Feld ausfuellen, damit Export und Teamkoordination eindeutig bleiben."
+        )
+      );
+      break;
+    case "startDate":
+      checks.push(
+        makeCheck(
+          /^\d{4}-\d{2}-\d{2}$/.test(value),
+          "Zeitlicher Startpunkt",
+          "Startdatum ist formal korrekt gesetzt.",
+          "Datum fehlt oder ist nicht im Format JJJJ-MM-TT.",
+          "serienschreiben",
+          "Startdatum setzen, damit Phasenplanung und Verantwortlichkeiten planbar werden."
+        )
+      );
+      break;
+    case "projectIdea":
+      checks.push(
+        makeCheck(
+          PROJECT_IDEAS.includes(value),
+          "Ideenanker",
+          "Projektidee ist klar verortet.",
+          "Projektidee ist nicht aus der Auswahlliste gesetzt.",
+          "kompendium",
+          "Eine Kernidee auswaehlen und darauf alle weiteren Entscheidungen rueckbinden."
+        )
+      );
+      break;
+    case "teamRoles":
+    case "roles":
+    case "support":
+      checks.push(
+        makeCheck(
+          countMatches(normalized, collaborationTokens) >= 3,
+          "Kollaboration und Arbeitsteilung",
+          "Teamrollen und Zusammenarbeit sind nachvollziehbar verteilt.",
+          "Rollen/Arbeitsteilung sind noch unklar. Zustaendigkeiten und Schnittstellen klar benennen.",
+          "serienschreiben",
+          "Mindestens drei Rollen + je eine klare Verantwortung und ein Feedback-Takt festlegen."
+        )
+      );
+      break;
+    case "textCore":
+    case "adaptationRule":
+      checks.push(
+        makeCheck(
+          hasAny(normalized, ["interpret", "adaption", "zeigen", "blick", "raum", "status"]) && hasAny(normalized, ["nicht", "statt"]),
+          "Adaption statt Nacherzaehlung",
+          "Der Medienwechsel wird interpretierend gedacht.",
+          "Noch zu nah an der Inhaltswiedergabe. Uebersetzung in Blick/Handlung/Raum konkretisieren.",
+          "kompendium",
+          "Formulieren: 'Wir interpretieren den Text durch ... , nicht durch reine Inhaltswiedergabe.'"
+        )
+      );
+      break;
+    case "seriesStatement":
+      checks.push(
+        makeCheck(
+          hasAny(normalized, ["zeigt", "dass"]) && !hasAny(normalized, ["dann", "danach", "am ende passiert"]),
+          "These ohne Ereigniskette",
+          "Thematische Aussage ist als belastbare These formuliert.",
+          "Noch zu ereignisnah. Aussage als allgemeiner moralischer Satz formulieren.",
+          "handbuch",
+          "Satzbau nutzen: 'Diese Serie zeigt, dass ...' ohne Plotchronologie."
+        )
+      );
+      break;
+    case "centralConflict":
+      checks.push(
+        makeCheck(
+          hasAny(normalized, ["will", "ziel"]) && hasAny(normalized, ["welt", "muss", "gegen", "widerstand"]),
+          "Dauerhafter Konflikt X vs Y",
+          "Konfliktachse ist als Gegenkraft angelegt.",
+          "Konflikt noch nicht als Gegenspannung sichtbar.",
+          "handbuch",
+          "Explizit schreiben: Figur will X, Welt/Institution verlangt Y."
+        )
+      );
+      break;
+    case "whySeries":
+    case "episodeOverview":
+    case "seriesMechanics":
+    case "pitchMechanics":
+      checks.push(
+        makeCheck(
+          hasAny(normalized, serialTokens) && hasAny(normalized, ["entscheidung", "konsequenz"]),
+          "Serielle Tragfaehigkeit",
+          "Episodische Wiederholbarkeit und Konsequenzlogik sind erkennbar.",
+          "Serienmechanik bleibt unklar. Episode/Staffel + Konsequenzlogik ausformulieren.",
+          "handbuch",
+          "Leitfrage pro Episode + veraenderte Beziehung als Konsequenz benennen."
+        )
+      );
+      checks.push(
+        makeCheck(
+          hasAny(normalized, screenplayTools),
+          "Drehbuchprozess (Filmpuls)",
+          "Prozesssprache (z. B. Premisse/Treatment/Turn) wird genutzt.",
+          "Prozessschritte fehlen. Vorstufe (Premisse/Expose/Treatment) klar benennen.",
+          "filmpuls",
+          "Mindestens einen Zwischenschritt zwischen Idee und Szene explizit machen."
+        )
+      );
+      break;
+    case "mainFigure":
+      checks.push(
+        makeCheck(
+          countMatches(normalized, ["wunde", "beduerfnis", "ziel", "angst", "selbsttaeusch", "strategie"]) >= 4,
+          "Psychologisches Vollprofil",
+          "Figurprofil deckt die zentralen Dramafaktoren ab.",
+          "Figurprofil ist noch lueckenhaft.",
+          "handbuch",
+          "Wunde, Beduerfnis, Ziel, Angst, Selbsttaeuschung und Strategie einzeln ausformulieren."
+        )
+      );
+      break;
+    case "staffelArc":
+    case "seasonThesis":
+      checks.push(
+        makeCheck(
+          hasAny(normalized, ["am anfang", "beginn"]) && hasAny(normalized, ["am ende", "erkennt"]),
+          "Moralische Bewegung der Staffel",
+          "Transformation Anfang->Ende ist klar.",
+          "Veraenderung bleibt diffus.",
+          "handbuch",
+          "Die Formel explizit ausfuellen: Anfangsglaube -> Enderkenntnis."
+        )
+      );
+      break;
+    case "cameraRules":
+    case "lightSoundRules":
+    case "visualConcept":
+    case "pitchVisual":
+      checks.push(
+        makeCheck(
+          countMatches(normalized, visualTokens) >= 3,
+          "Visuelle/auditive Konkretion",
+          "Kamera/Licht/Ton sind als Regeln ausgearbeitet.",
+          "Aesthetik bleibt allgemein. Mindestens drei konkrete Regelentscheidungen ergaenzen.",
+          "kompendium",
+          "Wenn-Dann-Regeln schreiben (z. B. Nahaufnahme nur bei Erkenntnis)."
+        )
+      );
+      break;
+    case "sceneStructure":
+      checks.push(
+        makeCheck(
+          hasAll(normalized, ["ziel", "widerstand"]) && hasAny(normalized, ["entscheidung", "konsequenz"]),
+          "Szenenmechanik",
+          "Ziel-Widerstand-Entscheidung-Konsequenz ist angelegt.",
+          "Szenenmechanik unvollstaendig.",
+          "handbuch",
+          "Viererstruktur in genau dieser Reihenfolge sichtbar machen."
+        )
+      );
+      break;
+    case "dialogSubtext":
+      checks.push(
+        makeCheck(
+          hasAny(normalized, ["subtext", "verborgen", "eigentlich", "will"]) && hasAny(normalized, ["reaktion", "spannung", "status"]),
+          "Dialog als Handlung",
+          "Subtext und Machtverschiebung sind erkennbar.",
+          "Dialog erklaert noch statt zu handeln.",
+          "kompendium",
+          "Pro Figur notieren: 'sagt' vs 'will wirklich'."
+        )
+      );
+      break;
+    case "scriptExcerpt":
+      checks.push(
+        makeCheck(
+          hasAny(normalized, ["int.", "ext.", "szene", "tag", "nacht"]) || /[A-Z]{2,}\s*\n/.test(value),
+          "Script-Format und Lesbarkeit",
+          "Drehbuchnahe Form ist vorhanden.",
+          "Formale Drehbuchmarker fehlen.",
+          "wikihow",
+          "Szenenueberschrift (INT./EXT., Ort, Zeit) und klar getrennte Dialogteile einsetzen."
+        )
+      );
+      break;
+    case "modelTool":
+      checks.push(
+        makeCheck(
+          hasAny(normalized, ["leonardo", "playground", "canva", "writerduet", "arc", "tool"]) && hasAny(normalized, ["weil", "um", "damit"]),
+          "Toolwahl mit Produktionslogik",
+          "Toolwahl ist begruendet und funktional.",
+          "Toolwahl wirkt beliebig.",
+          "serienschreiben",
+          "Tool + Arbeitszweck + erwarteter Output explizit koppeln."
+        )
+      );
+      break;
+    case "nextSteps":
+    case "goal":
+    case "strategy":
+    case "decisionActionPlan":
+      checks.push(
+        makeCheck(
+          hasAny(normalized, ["bis", "phase", "termin", "naechst", "heute"]) && hasAny(normalized, ["wir", "team", "rolle", "verantwort"]),
+          "Verbindlichkeit und Umsetzung",
+          "Schritte sind zeitlich und organisatorisch konkret.",
+          "Aktion ist noch nicht verbindlich genug.",
+          "serienschreiben",
+          "Jeden Schritt mit Frist, Verantwortlichkeit und pruefbarem Ergebnis notieren."
+        )
+      );
+      break;
+    case "intro":
+    case "pitchHook":
+      checks.push(
+        makeCheck(
+          hasAny(normalized, ["these", "relevanz", "warum", "jetzt"]) && words >= 20,
+          "Pitch-Einstieg mit Relevanzdruck",
+          "Hook verbindet Aussage und Gegenwartsbezug.",
+          "Einstieg braucht mehr Relevanz und klare These.",
+          "kompendium",
+          "In drei Saetzen bauen: Kernthese, Konflikt, Warum jetzt."
+        )
+      );
+      break;
+    case "juryQuestions":
+      checks.push(
+        makeCheck(
+          countMatches(normalized, ["?"]) >= 3 || countWords(value.split("\n").join(" ? ")) >= 25,
+          "Q&A-Vorbereitung",
+          "Mehrere Rueckfragen sind antizipiert.",
+          "Q&A ist noch zu schmal vorbereitet.",
+          "wikihow",
+          "Drei kritische Fragen + je eine evidenzbasierte Antwort ausformulieren."
+        )
+      );
+      break;
+    default:
+      checks.push(
+        makeCheck(
+          hasAny(normalized, ["weil", "damit", "deshalb", "konsequenz", "entscheidung", "ziel"]),
+          "Begruendungslogik",
+          "Entscheidungen sind begruendet.",
+          "Begruendungen fehlen noch.",
+          "handbuch",
+          "Bei jedem Kernsatz ein 'weil/damit' mitliefern."
+        )
+      );
+  }
+
+  if (["phase", "checkpoint", "pitch"].includes(context)) {
+    checks.push(
+      makeCheck(
+        hasAny(normalized, screenplayTools) || hasAny(normalized, ["plot", "struktur", "szen", "dialog"]),
+        "Drehbuchhandwerk",
+        "Handwerkliche Skriptperspektive ist eingebaut.",
+        "Drehbuchhandwerk bleibt implizit.",
+        "filmpuls",
+        "Premisse/Plotstruktur/Szenenfunktion kurz explizit benennen."
+      )
+    );
+  }
+
+  if (["phase", "checkpoint", "decision"].includes(context)) {
+    checks.push(
+      makeCheck(
+        hasAny(normalized, collaborationTokens),
+        "Arbeitskultur und Produktionsrealitaet",
+        "Team- und Produktionsaspekte sind mitgedacht.",
+        "Arbeitskultur fehlt. Verantwortung, Abstimmung oder Ressourcenlogik ergaenzen.",
+        "serienschreiben",
+        "Ergaenzen: Wer arbeitet wann mit wem woran und nach welcher Abstimmung?"
+      )
+    );
+  }
+
+  if (fieldLabel.toLowerCase().includes("drehbuch") || fieldLabel.toLowerCase().includes("szene")) {
+    checks.push(
+      makeCheck(
+        hasAny(normalized, ["int.", "ext.", "ort", "zeit", "tag", "nacht", "dialog"]),
+        "Szenische Lesefuehrung",
+        "Szene ist formal lesbar und fuehrbar.",
+        "Formale Lesefuehrung fehlt.",
+        "wikihow",
+        "Ort/Zeit/Dialogstruktur klar trennen, damit die Szene sofort inszenierbar wird."
+      )
+    );
+  }
+
+  return checks;
+}
+
+function makeCheck(pass, title, detailPass, detailFail, source, fix) {
+  return {
+    pass,
+    title,
+    detail: pass ? detailPass : detailFail,
+    source,
+    fix
+  };
+}
+
+function normalizeForCheck(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^\w\s\.\-\?\!]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function countWords(value) {
+  return String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+}
+
+function hasAny(normalized, tokens) {
+  return tokens.some((token) => normalized.includes(token));
+}
+
+function hasAll(normalized, tokens) {
+  return tokens.every((token) => normalized.includes(token));
+}
+
+function countMatches(normalized, tokens) {
+  let count = 0;
+  tokens.forEach((token) => {
+    if (normalized.includes(token)) count += 1;
+  });
+  return count;
 }
 
 function downloadFile(name, content, type) {
