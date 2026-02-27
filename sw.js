@@ -1,11 +1,12 @@
-const STATIC_CACHE = "showrunner-static-v2";
-const RUNTIME_CACHE = "showrunner-runtime-v2";
+const STATIC_CACHE = "showrunner-static-v3";
+const RUNTIME_CACHE = "showrunner-runtime-v3";
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./assets/jenny_background.mp4",
+  "./assets/tv-schreibmaschine-anleitung.mp4",
   "./assets/jenny_text_excerpt.txt",
   "./assets/Serienschreiben.pdf"
 ];
