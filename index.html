@@ -24,16 +24,23 @@
         <button type="button" id="export-dossier-md">Dossier als Markdown</button>
       </div>
       <div class="view-controls">
-        <label>
-          Hintergrundsichtbarkeit
-          <input id="bg-visibility" type="range" min="30" max="100" step="1" value="95">
+        <label class="view-control">
+          <span class="control-head">Filmsichtbarkeit <strong id="bg-visibility-value">88%</strong></span>
+          <input id="bg-visibility" type="range" min="30" max="100" step="1" value="88">
         </label>
-        <label>
-          Karten-Transparenz
-          <input id="card-opacity" type="range" min="38" max="90" step="1" value="42">
+        <label class="view-control">
+          <span class="control-head">Textlesbarkeit der Karten <strong id="card-opacity-value">58%</strong></span>
+          <input id="card-opacity" type="range" min="25" max="92" step="1" value="58">
         </label>
-        <button type="button" id="reset-visuals">Visuals reset</button>
       </div>
+      <div class="view-presets">
+        <button type="button" class="ghost" id="preset-film">Film stärker sichtbar</button>
+        <button type="button" class="ghost" id="preset-balanced">Ausgewogen</button>
+        <button type="button" class="ghost" id="preset-text">Text maximal lesbar</button>
+        <button type="button" id="reset-visuals">Zurücksetzen</button>
+      </div>
+      <p class="subtle view-help">Steuerung: Links = weniger, rechts = mehr. Presets setzen beide Regler gleichzeitig und sind die schnellste Variante.</p>
+      <p class="subtle view-help" id="view-state">Aktuell: Ausgewogen.</p>
     </header>
 
     <nav class="tabbar" aria-label="Hauptnavigation">

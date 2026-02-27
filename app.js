@@ -1,9 +1,9 @@
 const STORAGE_KEY = "showrunner_lab_v1";
-const VISUALS_KEY = "showrunner_visuals_v3";
+const VISUALS_KEY = "showrunner_visuals_v4";
 const MATERIAL_DB = "showrunner_materials_v1";
 const MATERIAL_STORE = "materials";
 const MATERIAL_ARCHIVE_TYPE = "showrunner-materials-archive";
-const VISUAL_DEFAULTS = { visibility: 95, cardOpacity: 42 };
+const VISUAL_DEFAULTS = { visibility: 88, cardOpacity: 58 };
 
 const META_FIELDS = [
   { key: "projectTitle", label: "Projekttitel", type: "text", placeholder: "z. B. Die Grenzen der Freiheit" },
@@ -918,7 +918,7 @@ function loadVisualSettings() {
     const parsed = JSON.parse(raw);
     return {
       visibility: clampNumber(Number(parsed.visibility), 30, 100, VISUAL_DEFAULTS.visibility),
-      cardOpacity: clampNumber(Number(parsed.cardOpacity), 38, 90, VISUAL_DEFAULTS.cardOpacity)
+      cardOpacity: clampNumber(Number(parsed.cardOpacity), 25, 92, VISUAL_DEFAULTS.cardOpacity)
     };
   } catch (error) {
     return { ...VISUAL_DEFAULTS };
@@ -933,56 +933,105 @@ function applyVisualSettings(settings) {
   const visibilityN = settings.visibility / 100;
   const root = document.documentElement;
 
-  const blur = 1.9 - visibilityN * 1.7;
-  const brightness = 1.02 + visibilityN * 0.82;
-  const saturate = 1.04 + visibilityN * 0.5;
-  const vignetteOpacity = 0.26 - visibilityN * 0.24;
-  const gradientOpacity = 0.18 - visibilityN * 0.16;
+  const blur = 3.2 - visibilityN * 2.8;
+  const brightness = 0.85 + visibilityN * 1.05;
+  const saturate = 0.94 + visibilityN * 0.58;
+  const vignetteOpacity = 0.48 - visibilityN * 0.44;
+  const gradientOpacity = 0.34 - visibilityN * 0.3;
 
   root.style.setProperty("--video-blur", `${Math.max(0.2, blur).toFixed(2)}px`);
   root.style.setProperty("--video-brightness", `${brightness.toFixed(2)}`);
   root.style.setProperty("--video-saturate", `${saturate.toFixed(2)}`);
-  root.style.setProperty("--vignette-opacity", `${Math.max(0.02, vignetteOpacity).toFixed(2)}`);
-  root.style.setProperty("--gradient-opacity", `${Math.max(0.02, gradientOpacity).toFixed(2)}`);
+  root.style.setProperty("--vignette-opacity", `${Math.max(0.04, vignetteOpacity).toFixed(2)}`);
+  root.style.setProperty("--gradient-opacity", `${Math.max(0.04, gradientOpacity).toFixed(2)}`);
   root.style.setProperty("--card-alpha", `${(settings.cardOpacity / 100).toFixed(2)}`);
 }
 
 function initVisualControls() {
   const visibility = document.getElementById("bg-visibility");
   const cardOpacity = document.getElementById("card-opacity");
+  const visibilityValue = document.getElementById("bg-visibility-value");
+  const cardOpacityValue = document.getElementById("card-opacity-value");
+  const viewState = document.getElementById("view-state");
+  const presetFilm = document.getElementById("preset-film");
+  const presetBalanced = document.getElementById("preset-balanced");
+  const presetText = document.getElementById("preset-text");
   const reset = document.getElementById("reset-visuals");
-  if (!visibility || !cardOpacity || !reset) return;
+  if (
+    !visibility ||
+    !cardOpacity ||
+    !visibilityValue ||
+    !cardOpacityValue ||
+    !viewState ||
+    !presetFilm ||
+    !presetBalanced ||
+    !presetText ||
+    !reset
+  ) return;
 
   const current = loadVisualSettings();
-  visibility.value = String(current.visibility);
-  cardOpacity.value = String(current.cardOpacity);
-  applyVisualSettings(current);
+  applyVisualPreset(current);
+
+  function refreshControlLabels(values) {
+    visibilityValue.textContent = `${values.visibility}%`;
+    cardOpacityValue.textContent = `${values.cardOpacity}%`;
+    viewState.textContent = `Aktuell: ${describeVisualMode(values)}.`;
+  }
+
+  function applyVisualPreset(values) {
+    visibility.value = String(values.visibility);
+    cardOpacity.value = String(values.cardOpacity);
+    applyVisualSettings(values);
+    refreshControlLabels(values);
+    saveVisualSettings(values);
+  }
+
+  refreshControlLabels(current);
 
   visibility.addEventListener("input", () => {
     const next = {
       visibility: clampNumber(Number(visibility.value), 30, 100, VISUAL_DEFAULTS.visibility),
-      cardOpacity: clampNumber(Number(cardOpacity.value), 38, 90, VISUAL_DEFAULTS.cardOpacity)
+      cardOpacity: clampNumber(Number(cardOpacity.value), 25, 92, VISUAL_DEFAULTS.cardOpacity)
     };
     applyVisualSettings(next);
+    refreshControlLabels(next);
     saveVisualSettings(next);
   });
 
   cardOpacity.addEventListener("input", () => {
     const next = {
       visibility: clampNumber(Number(visibility.value), 30, 100, VISUAL_DEFAULTS.visibility),
-      cardOpacity: clampNumber(Number(cardOpacity.value), 38, 90, VISUAL_DEFAULTS.cardOpacity)
+      cardOpacity: clampNumber(Number(cardOpacity.value), 25, 92, VISUAL_DEFAULTS.cardOpacity)
     };
     applyVisualSettings(next);
+    refreshControlLabels(next);
     saveVisualSettings(next);
+  });
+
+  presetFilm.addEventListener("click", () => {
+    applyVisualPreset({ visibility: 98, cardOpacity: 38 });
+  });
+
+  presetBalanced.addEventListener("click", () => {
+    applyVisualPreset({ ...VISUAL_DEFAULTS });
+  });
+
+  presetText.addEventListener("click", () => {
+    applyVisualPreset({ visibility: 72, cardOpacity: 84 });
   });
 
   reset.addEventListener("click", () => {
     const defaults = { ...VISUAL_DEFAULTS };
-    visibility.value = String(defaults.visibility);
-    cardOpacity.value = String(defaults.cardOpacity);
-    applyVisualSettings(defaults);
-    saveVisualSettings(defaults);
+    applyVisualPreset(defaults);
   });
+}
+
+function describeVisualMode(values) {
+  if (values.visibility >= 92 && values.cardOpacity <= 48) return "Filmfokus (starker Hintergrund, leichte Karten)";
+  if (values.cardOpacity >= 78 && values.visibility <= 80) return "Lesefokus (maximale Textlesbarkeit)";
+  if (values.cardOpacity >= 68) return "Lesefokus (gute Textlesbarkeit)";
+  if (values.visibility >= 90) return "Filmfokus";
+  return "Ausgewogen";
 }
 
 async function initMaterialsLibrary() {
