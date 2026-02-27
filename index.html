@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Showrunner Lab | Lernumgebung</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <video class="bg-video" autoplay muted loop playsinline>
+    <source src="./assets/jenny_background.mp4" type="video/mp4">
+  </video>
+  <div class="bg-vignette" aria-hidden="true"></div>
+  <div class="bg-gradient" aria-hidden="true"></div>
+
+  <main class="app-shell">
+    <header class="hero">
+      <p class="kicker">Digitale Lernumgebung</p>
+      <h1>Vom Roman zur Serienidee bis zum Pitch</h1>
+      <p class="hero-copy">Kleinschrittiger Showrunner-Workflow für Lernende ohne Vorerfahrung: Textarbeit, Gesamtkonzept, Drehbuchausschnitt, modellgenerierte Modellszene und finaler Jury-Pitch.</p>
+      <div class="hero-actions">
+        <button type="button" id="export-all-json">Gesamtprojekt exportieren</button>
+        <button type="button" id="import-all-json">Gesamtprojekt importieren</button>
+        <button type="button" id="export-dossier-md">Dossier als Markdown</button>
+      </div>
+    </header>
+
+    <nav class="tabbar" aria-label="Hauptnavigation">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="phases">Lernpfad</button>
+      <button class="tab" data-tab="checkpoints">Checkpoints</button>
+      <button class="tab" data-tab="decision">Decision System</button>
+      <button class="tab" data-tab="pitch">Pitch-Lab</button>
+      <button class="tab" data-tab="exports">Export-Zentrale</button>
+    </nav>
+
+    <section class="panel active" id="dashboard">
+      <div class="grid two">
+        <article class="card">
+          <h2>Projekt-Setup</h2>
+          <div class="field-grid" id="meta-fields"></div>
+          <label class="checkbox-line"><input type="checkbox" id="pk-buchgraph"> Vorkenntnis geprüft: <a href="https://patrickfischerksa.github.io/jenny-buchgraph/" target="_blank" rel="noreferrer">Jenny-Buchgraph</a></label>
+          <label class="checkbox-line"><input type="checkbox" id="pk-figuren"> Vorkenntnis geprüft: <a href="https://patrickfischerksa.github.io/lewald_jenny_figuren/" target="_blank" rel="noreferrer">Figurenübersicht</a></label>
+          <p class="subtle">Wenn ein Link nicht erreichbar ist, die Vorkenntnisse kurz im Team mündlich sichern.</p>
+        </article>
+
+        <article class="card">
+          <h2>Fortschritt</h2>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>Gesamtfortschritt</span><strong id="progress-value">0%</strong></div>
+            <div class="progress-bar"><span id="progress-fill"></span></div>
+          </div>
+          <p id="next-step" class="next-step"></p>
+          <ul class="stats" id="stats"></ul>
+        </article>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <h2>Roman-Starttext (Auszug)</h2>
+          <pre id="text-excerpt" class="excerpt">Lade Textauszug ...</pre>
+        </article>
+
+        <article class="card">
+          <h2>10-Wochen-Fahrplan</h2>
+          <ol id="timeline" class="timeline"></ol>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" id="phases">
+      <div class="grid split">
+        <aside class="card sticky" id="phase-nav"></aside>
+        <div class="card" id="phase-content"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="checkpoints">
+      <div class="card">
+        <h2>6 verpflichtende Gruppenberichte</h2>
+        <p class="subtle">Jeder Checkpoint enthält den standardisierten Berichtsraster aus dem Showrunner Master Template.</p>
+      </div>
+      <div id="checkpoint-list" class="checkpoint-list"></div>
+    </section>
+
+    <section class="panel" id="decision">
+      <div class="card">
+        <h2>Showrunner Decision System</h2>
+        <p>Wähle ein Problem aus und arbeite die Diagnosefragen ab, bevor ihr etwas am Konzept ändert.</p>
+        <label>
+          Problemtyp
+          <select id="symptom-select"></select>
+        </label>
+        <div id="decision-card" class="decision-card"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="pitch">
+      <div class="grid two">
+        <article class="card">
+          <h2>Pitch-Struktur (10 + 5 Minuten)</h2>
+          <div id="pitch-fields" class="field-grid"></div>
+          <div class="timer-wrap">
+            <div><strong id="pitch-timer">10:00</strong><span> Pitchzeit</span></div>
+            <div><strong id="qa-timer">05:00</strong><span> Q&A</span></div>
+          </div>
+          <div class="button-row">
+            <button type="button" id="start-pitch-timer">Pitch starten</button>
+            <button type="button" id="start-qa-timer">Q&A starten</button>
+            <button type="button" id="reset-timer">Timer reset</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Bewertungsrubrik</h2>
+          <div id="rubric"></div>
+          <p class="score">Gesamtscore: <strong id="rubric-total">0</strong> / 25</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" id="exports">
+      <div class="grid two">
+        <article class="card">
+          <h2>Import / Export</h2>
+          <div class="button-col">
+            <button type="button" id="export-all-json-2">Gesamtprojekt exportieren (JSON)</button>
+            <button type="button" id="import-all-json-2">Gesamtprojekt importieren (JSON)</button>
+            <button type="button" id="export-checkpoints-md">Alle Checkpoints als Markdown</button>
+            <button type="button" id="export-pitch-md">Pitch-Manuskript als Markdown</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Didaktischer Fokus Selbstwirksamkeit</h2>
+          <ul class="method-list">
+            <li>Mikroziele pro Phase festlegen</li>
+            <li>Hindernisse antizipieren und Hilfsstrategie planen</li>
+            <li>Fortschritt sichtbar machen statt nur Endprodukt bewerten</li>
+            <li>Kurze Reflexion nach jedem Checkpoint</li>
+            <li>Peer-Feedback an klaren Kriterien orientieren</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <small>Showrunner Lernumgebung | Stand: 27.02.2026 | Lokale Speicherung im Browser (localStorage)</small>
+    </footer>
+  </main>
+
+  <input type="file" id="import-file" accept="application/json" hidden>
+
+  <script src="./app.js"></script>
+</body>
+</html>
