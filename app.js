@@ -368,7 +368,8 @@ const FEEDBACK_SOURCES = {
   kompendium: "Unterrichtskompendium: Adaption als Interpretation, Leitfrage/Konsequenz, Pitchstruktur",
   filmpuls: "Filmpuls: Premisse, Expose/Treatment, Szenenfokus, Show-dont-tell",
   wikihow: "WikiHow-Prinzipien: Serienformat, Figurenkonsistenz, Script-Format, Ueberarbeitung",
-  serienschreiben: "Serienschreiben: Kollaboration, Arbeitsteilung, Produktions- und Arbeitskultur"
+  serienschreiben: "Knöhr 2025, Serienschreiben: Writers' Room, Storylining-Praxis, Teamdynamik, Produktionskultur",
+  knoeher: "Knöhr 2025, Serienschreiben: Pitching, Oneliner, Zopfdramaturgie, Serienentwicklung"
 };
 
 const COMMON_DE_WORDS = new Set([
@@ -1674,9 +1675,9 @@ function buildFieldFeedback(fieldKey, fieldLabel, rawValue, context) {
         hasAny(normalized, CONFLICT_TERMS),
         "Konflikt- oder Konsequenzlogik",
         "Konflikt/Entscheidung/Konsequenz wird inhaltlich adressiert.",
-        "Konflikt- und Konsequenzlogik fehlt noch.",
+        "Konflikt- und Konsequenzlogik fehlt noch – wer will was, was blockiert, was folgt daraus?",
         "handbuch",
-        "Explizit benennen: Wer will was, was blockiert, welche Konsequenz folgt?",
+        "Explizit benennen: Wer will was – was blockiert das Ziel – welche Konsequenz folgt? Knöhr (2025, S. 77): Der 'dauerhafte Konflikt' ist das Herzstück der Serien-DNA. Ohne Konfliktlogik kein Serienmotor.",
         3
       )
     );
@@ -1733,6 +1734,16 @@ function hasMeaningfulTitle(normalized, language) {
   );
 }
 
+// Gibt einen kurzen Hinweis auf den eingetippten Text zurück – für individuelleres Feedback
+function getValueHint(value) {
+  const words = value.trim().split(/\s+/).filter(w => /[a-zA-ZäöüÄÖÜß]{3,}/.test(w));
+  if (words.length >= 2) {
+    const preview = words.slice(0, 5).join(" ") + (words.length > 5 ? " …" : "");
+    return ` [Dein Eintrag: „${preview}"]`;
+  }
+  return "";
+}
+
 function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words, context, language) {
   const checks = [];
   const matchedTheme = getMatchedTerms(normalized, THEME_TERMS);
@@ -1740,162 +1751,491 @@ function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words
   const matchedVisual = getMatchedTerms(normalized, VISUAL_TERMS);
   const matchedCollab = getMatchedTerms(normalized, COLLAB_TERMS);
   const matchedScript = getMatchedTerms(normalized, SCRIPT_TERMS);
+  const hint = getValueHint(value);
 
   switch (fieldKey) {
     case "projectTitle":
-      checks.push(makeCheck(words >= 2 && words <= 10, "Titel-Schärfe", "Titel ist knapp und fokussiert.", "Titel ist zu vage oder zu kurz.", "kompendium", "Einen klaren Konfliktbegriff im Titel verankern (2-10 Wörter).", 3, true));
-      checks.push(
-        makeCheck(
-          language.qualitySignal >= 60 && !language.isLikelyNonsense,
-          "Sprachliche Tragfähigkeit",
-          "Titel ist sprachlich tragfähig und präsentierbar.",
-          "Titel ist sprachlich nicht präsentierbar (Zufallsmuster/fehlende Semantik).",
-          "kompendium",
-          "Titel als sinnvollen Satzkern mit Thema und Konflikt neu formulieren.",
-          4,
-          true
-        )
-      );
-      checks.push(
-        makeCheck(
-          hasMeaningfulTitle(normalized, language),
-          "Semantische Dichte",
-          "Titel enthält einen tragfähigen Sinnkern.",
-          "Titel enthält keinen tragfähigen Sinnkern (Füllwörter/Wiederholung ohne Aussage).",
-          "kompendium",
-          "Mindestens ein sinntragendes Schlüsselwort plus konkrete Konfliktrichtung ergänzen.",
-          4,
-          true
-        )
-      );
-      checks.push(makeCheck(matchedTheme.length >= 1 || hasAny(normalized, ["jenny", "meier", "1832"]), "Thematischer Anker", `Themenanker vorhanden (${matchedTheme.join(", ") || "JENNY-Kontext"}).`, "Themenanker fehlt.", "handbuch", "Mindestens ein Leitmotiv (z. B. Freiheit, Zugehörigkeit, Macht) im Titel benennen.", 3, true));
-      checks.push(
-        makeCheck(
-          !hasAny(normalized, ["asdf", "qwer", "lorem", "xxx", "testtest"]) && !language.hasKeyboardMash && language.gibberishTokenCount === 0,
-          "Glaubwürdigkeit",
-          "Kein Platzhalter- oder Zufallstitel erkannt.",
-          "Titel enthaelt Platzhalter/Zufallsmuster oder sprachlich unplausible Token.",
-          "kompendium",
-          "Titel in bedeutungsvoller Sprache neu formulieren: Konflikt + Thema + Perspektive.",
-          4,
-          true
-        )
-      );
+      checks.push(makeCheck(
+        words >= 2 && words <= 10,
+        "Titel-Schärfe",
+        "Titel ist knapp und fokussiert (2–10 Wörter).",
+        `Titel${hint} ist zu kurz oder zu lang für einen Oneliner.`,
+        "kompendium",
+        "Oneliner-Prinzip (vgl. Knöhr 2025, S. 131): Der Serientitel ist die Synopse in einem Zug – Welt + Thema + Konflikt. Teste: 'Was kämpft [Figur] wofür gegen wen?' – das ist dein Titel. Z. B. 'Jenny – Grenzen der Freiheit (1832)'.",
+        3, true
+      ));
+      checks.push(makeCheck(
+        language.qualitySignal >= 60 && !language.isLikelyNonsense,
+        "Sprachliche Tragfähigkeit",
+        "Titel ist sprachlich tragfähig und vor einer Jury präsentierbar.",
+        `Titel${hint} ist sprachlich nicht präsentierbar (Zufallsmuster/fehlende Semantik).`,
+        "kompendium",
+        "Der Titel ist das Erste, was eine Jury hört (Knöhr 2025, S. 128–131). Formuliere ihn als sinnvollen Satzkern: Thema + Konflikt – keine Zufallsworte, keine Platzhalter.",
+        4, true
+      ));
+      checks.push(makeCheck(
+        hasMeaningfulTitle(normalized, language),
+        "Semantische Dichte",
+        "Titel enthält einen tragfähigen Sinnkern.",
+        `Titel${hint} enthält keinen tragfähigen Sinnkern (Füllwörter/Wiederholung ohne Aussage).`,
+        "kompendium",
+        "Ein guter Serientitel 'verkauft' die Idee sofort (Knöhr 2025, S. 131). Mindestens ein sinntragendes Schlüsselwort (z. B. 'Freiheit', 'Schuld', 'Jenny') + eine konkrete Konfliktrichtung (z. B. '– Zwischen zwei Welten' oder '– Preis der Freiheit').",
+        4, true
+      ));
+      checks.push(makeCheck(
+        matchedTheme.length >= 1 || hasAny(normalized, ["jenny", "meier", "1832"]),
+        "Thematischer Anker",
+        `Themenanker vorhanden (${matchedTheme.join(", ") || "Serienwelt/Figur"}).`,
+        `Themenanker fehlt${hint}.`,
+        "handbuch",
+        "Im Pitch wird nach dem Leitmotiv gefragt (Knöhr 2025, S. 136): Was ist das Thema der Serie? Nenne im Titel mindestens eines: Freiheit, Zugehörigkeit, Macht, Emanzipation, Religion, Identität – oder verankere die Serienwelt ('Jenny', '1832', 'Meier').",
+        3, true
+      ));
+      checks.push(makeCheck(
+        !hasAny(normalized, ["asdf", "qwer", "lorem", "xxx", "testtest"]) && !language.hasKeyboardMash && language.gibberishTokenCount === 0,
+        "Glaubwürdigkeit",
+        "Kein Platzhalter- oder Zufallstitel erkannt.",
+        `Titel${hint} enthält Platzhalter oder Zufallsmuster.`,
+        "kompendium",
+        "Formuliere den Titel in bedeutungsvoller Sprache: Konflikt + Thema + Perspektive. Der Titel muss vor einer echten Jury bestehen (vgl. Knöhr 2025, S. 130–134).",
+        4, true
+      ));
       break;
+
     case "teamName":
     case "className":
       checks.push(makeCheck(words >= 1 && !/^[^a-zA-Z0-9]*$/.test(value), "Eindeutige Zuordnung", "Eintrag ist als reale Zuordnung nutzbar.", "Eintrag fehlt oder ist unplausibel.", "serienschreiben", "Eindeutigen Team-/Klassenbezug eintragen.", 2));
       break;
+
     case "startDate":
       checks.push(makeCheck(/^\d{4}-\d{2}-\d{2}$/.test(value), "Planungsfaehiges Datum", "Datum ist formal korrekt.", "Datum fehlt oder Format ist falsch.", "serienschreiben", "Datum im Format JJJJ-MM-TT eintragen.", 3));
       break;
+
     case "projectIdea":
-      checks.push(makeCheck(PROJECT_IDEAS.includes(value), "Projektidee verankert", "Idee ist aus dem kuratierten Set gewaehlt.", "Idee ist nicht sauber verankert.", "kompendium", "Eine der vorgegebenen Projektideen waehlen.", 2));
+      checks.push(makeCheck(PROJECT_IDEAS.includes(value), "Projektidee verankert", "Idee ist aus dem kuratierten Set gewählt.", "Idee ist nicht sauber verankert.", "kompendium", "Eine der vorgegebenen Projektideen wählen.", 2));
       break;
+
     case "teamRoles":
     case "roles":
     case "support":
-      checks.push(makeCheck(matchedCollab.length >= 2, "Rollenmodell Writers' Room", `Rollen-/Kooperationsbegriffe vorhanden (${matchedCollab.join(", ") || "-" }).`, "Rollenlogik im Sinne Writers' Room fehlt.", "handbuch", "Mindestens zwei Rollen und ihre Verantwortungsgrenzen benennen.", 3));
-      checks.push(makeCheck(hasAny(normalized, ["feedback", "abgabe", "termin", "zustandig", "verantwort"]), "Arbeitskultur", "Abstimmungs- oder Verantwortungslogik ist enthalten.", "Arbeitsprozess bleibt unklar.", "serienschreiben", "Feedback-Takt, Verantwortliche und Abgabeform festlegen.", 3));
+      checks.push(makeCheck(
+        matchedCollab.length >= 2,
+        "Rollenmodell Writers' Room",
+        `Rollen- und Kooperationsbegriffe vorhanden (${matchedCollab.join(", ") || "–"}).`,
+        `Rollenlogik im Sinne Writers' Room fehlt${hint}.`,
+        "serienschreiben",
+        "Knöhr beschreibt (2025, S. 188): In Serienproduktionen gibt es klare Rollen – Storyliner*in, Story Editor*in, Dialogautor*in, Script Editor*in. Übertrage das auf euer Team: Wer ist Showrunner? Wer Head of Story? Wer Visual Lead? Benenne mindestens zwei Rollen mit konkreter Aufgabe und Verantwortungsgrenze.",
+        3
+      ));
+      checks.push(makeCheck(
+        hasAny(normalized, ["feedback", "abgabe", "termin", "zustandig", "verantwort"]),
+        "Arbeitskultur",
+        "Abstimmungs- oder Verantwortungslogik ist enthalten.",
+        `Arbeitsprozess${hint} bleibt unklar – wer gibt wann Feedback an wen?`,
+        "serienschreiben",
+        "In professionellen Writers' Rooms (Knöhr 2025, S. 185) ist 'vielfaches Feedback' das Kernprinzip des Optimierungsprozesses. Haltet fest: Wer gibt wann Feedback an wen – und bis wann muss welches Ergebnis vorliegen?",
+        3
+      ));
       break;
+
     case "textCore":
-      checks.push(makeCheck(matchedTheme.length >= 1 && hasAny(normalized, CONFLICT_TERMS), "Interpretativer Konfliktkern", `Themen- und Konfliktbezug vorhanden (${matchedTheme.join(", ") || "Thema"}).`, "Textkern bleibt beschreibend statt konfliktorientiert.", "kompendium", "Romanpassage als gesellschaftlichen Konflikt formulieren (nicht nur Inhalt).", 3));
+      checks.push(makeCheck(
+        matchedTheme.length >= 1 && hasAny(normalized, CONFLICT_TERMS),
+        "Interpretativer Konfliktkern",
+        `Themen- und Konfliktbezug vorhanden (${matchedTheme.join(", ") || "Thema"}).`,
+        `Textkern${hint} bleibt beschreibend statt konfliktorientiert.`,
+        "kompendium",
+        "Adaption bedeutet Interpretation, nicht Nacherzählung. Formuliere den gesellschaftlichen Kern als Konflikt: Wer kämpft gegen wen, wofür – mit welchen Konsequenzen? Bei 'Jenny': Was ist der gesellschaftliche Widerspruch im Roman, der 2025 noch immer brennt?",
+        3
+      ));
+      checks.push(makeCheck(
+        words >= 8 && hasAny(normalized, ["gesellschaft", "norm", "ausgrenzung", "macht", "klasse", "religion", "geschlecht", "emanzipation", "jenny", "1832"]),
+        "Gesellschaftliche Einbettung",
+        "Textkern ist gesellschaftlich und historisch verankert.",
+        `Gesellschaftlicher Kontext des Konflikts fehlt noch${hint}.`,
+        "knoeher",
+        "Knöhr zeigt (2025, S. 11–15): Serienschreibende müssen den Stoff im gesellschaftlichen Kontext lesen. Frage für 'Jenny' (Lewald, 1843): Welche gesellschaftliche Norm oder Institution erzeugt den Konflikt – Antisemitismus, Klassengesellschaft, Geschlechterrolle? Und warum ist das 2025 noch relevant?",
+        2
+      ));
       break;
+
     case "adaptationRule":
-      checks.push(makeCheck(hasAny(normalized, ["interpret", "adaption", "uebersetz", "zeigen"]) && hasAny(normalized, ["nicht", "statt"]), "Medienwechsel-Regel", "Regel zur Adaption ist sichtbar.", "Regel fuer den Medienwechsel fehlt.", "kompendium", "Satz ergaenzen: Was wird gezeigt statt erklaert/erzaehlt?", 3));
-      checks.push(makeCheck(hasAny(normalized, ["blick", "raum", "status", "dialog", "konsequenz"]), "Szenische Operationalisierung", "Regel ist in Szenenlogik uebersetzt.", "Adaption bleibt abstrakt.", "handbuch", "Konkrete Mittel nennen: Blickregie, Raumdramaturgie, Statuswechsel.", 2));
+      checks.push(makeCheck(
+        hasAny(normalized, ["interpret", "adaption", "uebersetz", "zeigen"]) && hasAny(normalized, ["nicht", "statt"]),
+        "Medienwechsel-Regel",
+        "Regel zur Adaption (Zeigen statt Erzählen) ist sichtbar.",
+        `Regel für den Medienwechsel fehlt${hint}.`,
+        "kompendium",
+        "Adaption = Interpretation: Was zeigt ihr, statt es zu erklären? Knöhr beschreibt (2025, S. 179), wie Storyliner*innen Konflikte 'in Bildern umsetzen'. Ergänze: 'Wir zeigen [Konflikt] durch [konkretes filmisches Mittel] – statt ihn zu erzählen.'",
+        3
+      ));
+      checks.push(makeCheck(
+        hasAny(normalized, ["blick", "raum", "status", "dialog", "konsequenz"]),
+        "Szenische Operationalisierung",
+        "Regel ist in konkrete Szenenlogik übersetzt.",
+        `Adaption${hint} bleibt noch abstrakt – filmische Mittel fehlen.`,
+        "handbuch",
+        "Konkrete filmische Mittel nennen (Unterrichtskompendium): Blickregie, Raumdramaturgie, Statuswechsel, Subtext im Dialog. Beispiel: 'Wir zeigen Ausgrenzung durch einen leeren Stuhl neben Jenny – nicht durch Erklärung.'",
+        2
+      ));
       break;
+
     case "microGoal":
     case "goal":
     case "strategy":
     case "nextSteps":
     case "decisionActionPlan":
-      checks.push(makeCheck(hasAny(normalized, ["bis", "phase", "termin", "datum", "heute", "morgen", "naechst"]), "Zeitliche Verbindlichkeit", "Zeitrahmen ist gesetzt.", "Keine klare zeitliche Verbindlichkeit.", "serienschreiben", "Frist + Lieferobjekt nennen.", 3));
-      checks.push(makeCheck(hasAny(normalized, ["wer", "wir", "team", "rolle", "verantwort"]), "Verantwortungsklaerung", "Verantwortlichkeit ist adressiert.", "Verantwortlichkeiten fehlen.", "serienschreiben", "Zustandige Person/Rolle und Ergebnis definieren.", 2));
+      checks.push(makeCheck(
+        hasAny(normalized, ["bis", "phase", "termin", "datum", "heute", "morgen", "naechst"]),
+        "Zeitliche Verbindlichkeit",
+        "Zeitrahmen ist gesetzt.",
+        `Keine klare zeitliche Verbindlichkeit${hint}.`,
+        "serienschreiben",
+        "Frist + Lieferobjekt nennen: 'Bis [Datum/Phase] liefern wir [konkretes Ergebnis].' Vage Absichten sind keine Planung.",
+        3
+      ));
+      checks.push(makeCheck(
+        hasAny(normalized, ["wer", "wir", "team", "rolle", "verantwort"]),
+        "Verantwortungsklaerung",
+        "Verantwortlichkeit ist adressiert.",
+        `Verantwortlichkeiten fehlen${hint} – wer ist zuständig?`,
+        "serienschreiben",
+        "Zuständige Person/Rolle und das zu liefernde Ergebnis definieren. Im professionellen Kontext (Knöhr 2025, S. 185) ist Klarheit über Rollen Voraussetzung für Teamproduktivität.",
+        2
+      ));
       break;
+
     case "seriesStatement":
-      checks.push(makeCheck(hasAny(normalized, ["zeigt", "dass"]), "These als Aussage", "Series Statement ist als These angelegt.", "These-Form fehlt.", "handbuch", "Mit 'Diese Serie zeigt, dass ...' formulieren.", 3));
-      checks.push(makeCheck(!hasAny(normalized, ["dann", "danach", "zuerst", "am ende passiert"]), "Keine Plotchronologie", "Statement bleibt auf Bedeutungsebene.", "Statement kippt in Ereignisabfolge.", "handbuch", "Chronologische Plotdetails entfernen, moralischen Kern behalten.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["zeigt", "dass"]),
+        "These als Aussage",
+        "Series Statement ist als moralische These formuliert.",
+        `Statement${hint} hat noch keine These-Form – es klingt wie eine Inhaltsangabe.`,
+        "handbuch",
+        "Das Series Statement ist die moralische Leitthese der Serie. Format: 'Diese Serie zeigt, dass [gesellschaftliche Aussage].' Knöhr beschreibt (2025, S. 146–148), dass im Writers' Room geprüft wird, ob 'die Geschichte wirklich stimmt' – d. h. ob jede Episode diese These bestätigt oder herausfordert.",
+        3
+      ));
+      checks.push(makeCheck(
+        !hasAny(normalized, ["dann", "danach", "zuerst", "am ende passiert"]),
+        "Keine Plotchronologie",
+        "Statement bleibt auf Bedeutungsebene – nicht auf Handlungsebene.",
+        `Statement${hint} kippt in Ereignisabfolge – das ist eine Inhaltsangabe, kein Statement.`,
+        "handbuch",
+        "Chronologische Plotdetails entfernen, moralischen Kern behalten. Teste: Könnte dein Statement auch als Zeitungsartikel-These stehen? Wenn ja, ist es ein echtes Series Statement. Wenn es klingt wie eine Zusammenfassung, nochmals formulieren.",
+        3
+      ));
+      checks.push(makeCheck(
+        matchedTheme.length >= 1,
+        "Thematischer Kern im Statement",
+        `Gesellschaftlicher Themenanker vorhanden (${matchedTheme.join(", ")}).`,
+        `Statement${hint} nennt noch kein gesellschaftliches Thema.`,
+        "knoeher",
+        "Welches gesellschaftliche Thema trägt die Serie? (Freiheit, Zugehörigkeit, Macht, Emanzipation, Identität, Norm) Verknüpfe es mit der Romanwelt: Was sagt 'Jenny' (Lewald, 1843) über heute?",
+        2
+      ));
       break;
+
     case "centralConflict":
-      checks.push(makeCheck(hasAny(normalized, ["will", "ziel"]) && hasAny(normalized, ["welt", "muss", "institution", "widerstand", "gegen"]), "X-vs-Y-Spannung", "Konfliktachse ist als Gegenspannung formuliert.", "X-vs-Y-Struktur fehlt.", "handbuch", "Explizit schreiben: Figur will X, Welt verlangt Y.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["will", "ziel"]) && hasAny(normalized, ["welt", "muss", "institution", "widerstand", "gegen"]),
+        "X-vs-Y-Spannung",
+        "Konfliktachse ist als Gegenspannung (X vs. Y) formuliert.",
+        `X-vs-Y-Struktur fehlt${hint} – Figur und Gegenkraft sind nicht in Spannung gesetzt.`,
+        "handbuch",
+        "Knöhr zeigt (2025, S. 98): Figuren müssen so gebaut sein, dass 'Konflikte ohne Zufall entstehen.' Schreibe explizit: '[Figur] will [X] – die [Welt/Norm/Institution] verlangt aber [Y].' Für Jenny: Jenny will [?] – die Gesellschaft von 1832 verlangt aber [?].",
+        3
+      ));
+      checks.push(makeCheck(
+        hasAny(normalized, THEME_TERMS) || hasAny(normalized, ["gesellschaft", "norm", "klasse", "religion", "ausgrenzung", "judentum", "emanzipation"]),
+        "Strukturelle Konfliktursache",
+        "Konflikt ist strukturell in der Gesellschaft verankert, nicht zufällig.",
+        `Konflikt${hint} wirkt noch episodisch – kein strukturelles Fundament sichtbar.`,
+        "knoeher",
+        "In der Serienentwicklung (Knöhr 2025, S. 77) ist der 'dauerhafte Konflikt' das Herzstück der Serien-DNA: Er darf nicht episodisch sein, sondern muss aus der gesellschaftlichen Struktur der Serienwelt entstehen. Welche Norm oder Institution in Jennys Welt (1832) erzeugt den Konflikt dauerhaft?",
+        2
+      ));
       break;
+
     case "whySeries":
     case "seriesMechanics":
     case "pitchMechanics":
     case "episodeOverview":
-      checks.push(makeCheck(matchedSerial.length >= 2, "Serielle Architektur", `Serienmarker vorhanden (${matchedSerial.join(", ") || "-" }).`, "Serienlogik bleibt zu allgemein.", "handbuch", "Episode, Leitfrage, Cliffhanger und Arc explizit ausarbeiten.", 3));
-      checks.push(makeCheck(hasAny(normalized, ["entscheidung", "konsequenz"]), "Konsequenzprinzip", "Konsequenzen sind als Serienmotor angelegt.", "Konsequenzprinzip fehlt.", "kompendium", "Pro Episode Konsequenz notieren, die Beziehungen veraendert.", 3));
-      checks.push(makeCheck(matchedScript.length >= 1, "Drehbuchprozess", `Prozessbezug vorhanden (${matchedScript.join(", ") || "-" }).`, "Drehbuchprozessstufe fehlt.", "filmpuls", "Premisse/Expose/Treatment/Plotstruktur als Zwischenschritt benennen.", 2));
+      checks.push(makeCheck(
+        matchedSerial.length >= 2,
+        "Serielle Architektur",
+        `Serienmarker vorhanden (${matchedSerial.join(", ") || "–"}).`,
+        `Serienlogik${hint} bleibt zu allgemein – keine Episodenstruktur erkennbar.`,
+        "handbuch",
+        "Knöhr beschreibt (2025, S. 192) die 'Zopfdramaturgie' als Kernprinzip: Drei Handlungsstränge weben sich über Episoden – mit Cliffhanger, Leitfrage und wiederkehrendem Konflikt. Benenne konkret: Episodenstruktur, Leitfrage pro Episode, Cliffhanger und den Staffel-Arc.",
+        3
+      ));
+      checks.push(makeCheck(
+        hasAny(normalized, ["entscheidung", "konsequenz"]),
+        "Konsequenzprinzip",
+        "Konsequenzen sind als Serienmotor angelegt.",
+        `Konsequenzprinzip fehlt${hint} – was ändert sich dauerhaft nach jeder Episode?`,
+        "kompendium",
+        "Das Unterrichtskompendium nennt die Engine: Ordnung → Störung → Dilemma → Entscheidung → Konsequenz. Pro Episode muss eine Entscheidung fallen, die eine Beziehung oder Konstellation dauerhaft verändert. Welche Konsequenz verändert Jennys Welt in Folge 1?",
+        3
+      ));
+      checks.push(makeCheck(
+        matchedScript.length >= 1,
+        "Drehbuchprozess",
+        `Entwicklungsschritt vorhanden (${matchedScript.join(", ") || "–"}).`,
+        `Entwicklungsschritt fehlt${hint} – in welcher Phase seid ihr?`,
+        "filmpuls",
+        "Im Serienentwicklungsprozess folgt auf den Pitch das Exposé, dann das Treatment (Knöhr 2025, S. 128–130). Benenne, in welchem Schritt ihr euch gerade befindet und was der nächste konkrete Schritt ist.",
+        2
+      ));
       break;
+
     case "relevanceNow":
-      checks.push(makeCheck(getMatchedTerms(normalized, CURRENT_TERMS).length >= 1, "Gegenwartsbezug", "Aktualitaetsbezug ist vorhanden.", "Warum-jetzt-Perspektive fehlt.", "kompendium", "Explizit benennen, welches heutige Problem die Serie spiegelt.", 3));
+      checks.push(makeCheck(
+        getMatchedTerms(normalized, CURRENT_TERMS).length >= 1,
+        "Gegenwartsbezug",
+        "Aktualitätsbezug ist vorhanden.",
+        `Warum-jetzt-Perspektive fehlt${hint} – warum erzählen wir das 2025?`,
+        "kompendium",
+        "Warum erzählen wir diese Geschichte 2025? Knöhr (2025, S. 13–15) betont: Serienschreibende müssen die gesellschaftliche Relevanz ihres Stoffs kennen. Benenne explizit: Welches aktuelle Problem (Ausgrenzung, Gleichstellung, Klassengesellschaft, Antisemitismus?) spiegelt die Jenny-Geschichte heute wider?",
+        3
+      ));
       break;
+
     case "mainFigure":
-      checks.push(makeCheck(countMatches(normalized, ["wunde", "beduerfnis", "ziel", "angst", "selbsttaeusch", "strategie"]) >= 4, "Psychologisches Profil", "Figurenprofil ist differenziert angelegt.", "Zentrale psychologische Komponenten fehlen.", "handbuch", "Wunde, Beduerfnis, Ziel, Angst, Selbsttaeuschung und Strategie systematisch ausfuellen.", 3));
+      checks.push(makeCheck(
+        countMatches(normalized, ["wunde", "beduerfnis", "ziel", "angst", "selbsttaeusch", "strategie"]) >= 4,
+        "Psychologisches Profil",
+        "Figurenprofil ist differenziert und vollständig angelegt.",
+        `Zentrale psychologische Komponenten fehlen${hint}.`,
+        "handbuch",
+        "Ein vollständiges Figurenprofil braucht alle sechs Komponenten (Handbuch): Wunde (was hat die Figur erlitten?), Bedürfnis (was braucht sie wirklich?), Ziel (was will sie sichtbar?), Angst (was blockiert sie?), Selbsttäuschung (was glaubt sie fälschlicherweise?) und Strategie (wie kämpft sie?). Fülle alle sechs für Jenny aus.",
+        3
+      ));
+      checks.push(makeCheck(
+        hasAny(normalized, ["widerspruch", "ambivalent", "gleichzeitig", "einerseits"]) || countMatches(normalized, ["wunde", "beduerfnis", "ziel", "angst", "selbsttaeusch", "strategie"]) >= 3,
+        "Innerer Widerspruch der Figur",
+        "Figur trägt innere Widersprüche – das erzeugt serielle Spannung.",
+        `Figur${hint} wirkt noch eindimensional – wo liegt der innere Widerspruch?`,
+        "knoeher",
+        "Knöhr betont (2025, S. 109–114): Starre Figuren erzeugen keine seriellen Konflikte. Die spannendsten Figuren wollen das eine, brauchen aber das andere. Bei Jenny: Was will sie – und was braucht sie wirklich? Wo liegt der innere Widerspruch, der sie über Episoden treibt?",
+        2
+      ));
       break;
+
     case "antagonisticForce":
-      checks.push(makeCheck(hasAny(normalized, ["figur", "institution", "norm", "staat", "familie", "gesellschaft"]), "Gegenkraft-Typ", "Art der Gegenkraft ist benannt.", "Gegenkraft bleibt unscharf.", "handbuch", "Benennen, ob Person, Institution oder Norm die Gegenkraft darstellt.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["figur", "institution", "norm", "staat", "familie", "gesellschaft"]),
+        "Gegenkraft-Typ",
+        "Art der Gegenkraft (Person/Institution/Norm) ist benannt.",
+        `Gegenkraft${hint} bleibt unscharf – wer oder was blockiert die Hauptfigur strukturell?`,
+        "handbuch",
+        "Benenne, ob die Gegenkraft eine Person, eine Institution (Kirche, Staat, Familie) oder eine soziale Norm ist. In 'Jenny': Wer oder was setzt Jenny den stärksten Widerstand entgegen – und warum kann dieser Widerstand nicht einfach überwunden werden?",
+        3
+      ));
       break;
+
     case "relationshipArc":
-      checks.push(makeCheck(hasAny(normalized, ["ausgang", "vorher", "am anfang"]) && hasAny(normalized, ["veraender", "kippt", "am ende"]), "Beziehungsveraenderung", "Entwicklungslinie ist nachvollziehbar.", "Beziehungsdynamik ist nicht klar.", "kompendium", "Startzustand, Kippmoment und Endzustand der Beziehung benennen.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["ausgang", "vorher", "am anfang"]) && hasAny(normalized, ["veraender", "kippt", "am ende"]),
+        "Beziehungsveränderung",
+        "Entwicklungslinie (Anfang → Kipp → Ende) ist nachvollziehbar.",
+        `Beziehungsdynamik${hint} ist nicht klar – fehlen Startzustand oder Kippmoment.`,
+        "kompendium",
+        "Format: 'Am Anfang ist [A] und [B] [Beziehung]. Dann kippt es, weil [Entscheidung/Ereignis]. Am Ende ist [neue Beziehung].' Welche Beziehung in der Jenny-Welt verändert sich durch den Serienkonflikt zuerst?",
+        3
+      ));
       break;
+
     case "staffelArc":
     case "seasonThesis":
-      checks.push(makeCheck(hasAny(normalized, ["am anfang", "beginn"]) && hasAny(normalized, ["am ende", "erkennt"]), "Moralische Staffelbewegung", "Transformationsbogen ist angelegt.", "Anfang-Ende-Verschiebung fehlt.", "handbuch", "Formel konsequent ausfuellen: Anfangsglaube -> Enderkenntnis.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["am anfang", "beginn"]) && hasAny(normalized, ["am ende", "erkennt"]),
+        "Moralische Staffelbewegung",
+        "Transformationsbogen (Anfangsglaube → Enderkenntnis) ist angelegt.",
+        `Anfang-Ende-Verschiebung fehlt${hint} – kein moralischer Bogen sichtbar.`,
+        "handbuch",
+        "Formel: 'Am Anfang glaubt [Figur], dass [Ausgangsglaube]. Am Ende erkennt sie, dass [neue Erkenntnis].' Diese Bewegung muss sich durch alle Episoden der Staffel ziehen – nicht als Plotzusammenfassung, sondern als moralischer Bogen.",
+        3
+      ));
       break;
+
     case "worldRules":
     case "spaceLogic":
-      checks.push(makeCheck(hasAny(normalized, ["macht", "institution", "regel", "code", "raum", "oeffentlich", "privat"]), "Weltlogik", "Sozialregeln und Raumfunktion sind erkennbar.", "Weltregeln bleiben unscharf.", "kompendium", "Pro Raum eine soziale Funktion und Machtwirkung angeben.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["macht", "institution", "regel", "code", "raum", "oeffentlich", "privat"]),
+        "Weltlogik",
+        "Sozialregeln und Raumfunktion sind erkennbar.",
+        `Weltregeln${hint} bleiben unscharf – keine Macht- oder Raumlogik erkennbar.`,
+        "kompendium",
+        "Pro Raum eine soziale Funktion und Machtwirkung angeben. In 'Jenny' (1832): Welche Räume existieren – und wer hat in welchem Raum Macht? (z. B. Salon = Norm-Raum, Privatgemach = Rückzug, Straße = öffentliche Kontrolle, Synagoge = Identitätsraum)",
+        3
+      ));
       break;
+
     case "cameraRules":
     case "lightSoundRules":
     case "visualConcept":
     case "pitchVisual":
-      checks.push(makeCheck(matchedVisual.length >= 3, "Audiovisuelle Regelklarheit", `Konkrete Stilmarker vorhanden (${matchedVisual.join(", ") || "-" }).`, "Audiovisuelle Regeln sind zu allgemein.", "handbuch", "Mindestens drei Wenn-Dann-Regeln fuer Kamera/Licht/Ton formulieren.", 3));
+      checks.push(makeCheck(
+        matchedVisual.length >= 3,
+        "Audiovisuelle Regelklarheit",
+        `Konkrete Stilmarker vorhanden (${matchedVisual.join(", ") || "–"}).`,
+        `Audiovisuelle Regeln${hint} sind zu allgemein – keine Wenn-Dann-Logik erkennbar.`,
+        "handbuch",
+        "Mindestens drei Wenn-Dann-Regeln für Kamera/Licht/Ton formulieren. Beispiel: 'Wenn Jenny unter Druck steht → Nahaufnahme, flaches Licht, keine Musik.' Bezieht euch auf die Weltlogik: Wie sieht Macht in dieser Serie aus?",
+        3
+      ));
       break;
+
     case "turningPoints":
-      checks.push(makeCheck(hasAny(normalized, ["wendepunkt", "kipp", "entscheidung", "offenbarung", "bruch"]), "Dramaturgische Kipppunkte", "Wendelogik ist sichtbar.", "Wendepunkte sind nicht klar konturiert.", "filmpuls", "Pro Wendepunkt Ausloeser, Entscheidung und Folge notieren.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["wendepunkt", "kipp", "entscheidung", "offenbarung", "bruch"]),
+        "Dramaturgische Kipppunkte",
+        "Wendelogik ist sichtbar.",
+        `Wendepunkte${hint} sind nicht klar konturiert – was ändert sich wirklich?`,
+        "filmpuls",
+        "Pro Wendepunkt Auslöser, Entscheidung und Folge notieren. Format: '[Ereignis] → [Figur entscheidet sich für X] → [Konsequenz, die alles verändert].' Keine Wendepunkte ohne Konsequenz.",
+        3
+      ));
       break;
+
     case "consistencyCheck":
-      checks.push(makeCheck(hasAny(normalized, ["risiko", "bruch", "inkonsist", "leerlauf", "massnahme"]), "Qualitaetssicherung", "Koharenzrisiken werden reflektiert.", "Risikoanalyse fehlt.", "handbuch", "Mindestens zwei Risiken + Gegenmassnahmen benennen.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["risiko", "bruch", "inkonsist", "leerlauf", "massnahme"]),
+        "Qualitätssicherung",
+        "Kohärenzrisiken werden reflektiert.",
+        `Risikoanalyse${hint} fehlt – wo könnte die Serie inkonsistent werden?`,
+        "handbuch",
+        "In der Serienproduktion ist Kohärenz entscheidend (Knöhr 2025, S. 177–179): Das 'Gedächtnis der Serie' – Backstory-Listen, Figurenkonsistenz – muss gepflegt werden. Benennt mindestens zwei Bruchrisiken eurer Serie und konkrete Gegenmassnahmen.",
+        3
+      ));
       break;
+
     case "sceneGoal":
     case "sceneStructure":
-      checks.push(makeCheck(hasAny(normalized, ["ziel", "widerstand"]) && hasAny(normalized, ["entscheidung", "konsequenz", "status"]), "Szenenmechanik", "Szenenlogik ist dramaturgisch belastbar.", "Szenenmechanik ist unvollstaendig.", "handbuch", "Viererschritt explizit ausformulieren: Ziel, Widerstand, Entscheidung, Konsequenz.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["ziel", "widerstand"]) && hasAny(normalized, ["entscheidung", "konsequenz", "status"]),
+        "Szenenmechanik",
+        "Szenenlogik ist dramaturgisch belastbar.",
+        `Szenenmechanik${hint} ist unvollständig – Ziel, Widerstand oder Konsequenz fehlen.`,
+        "handbuch",
+        "Knöhr beschreibt (2025, S. 179), wie Storyliner*innen jede Szene als Oneliner formulieren: Wer will was – aus wessen Perspektive – wie zeigen wir den Konflikt 'in Bildern'? Viererschritt: Ziel → Widerstand → Entscheidung → Konsequenz (Statuswechsel).",
+        3
+      ));
       break;
+
     case "dialogSubtext":
-      checks.push(makeCheck(hasAny(normalized, ["subtext", "verborgen", "eigentlich", "status"]) && hasAny(normalized, ["will", "vermeiden", "durchsetzen"]), "Subtext und Macht", "Dialogfunktion ist auf Handlung und Macht ausgerichtet.", "Dialog bleibt auf Informationsebene.", "kompendium", "Pro Figur notieren: Gesagtes, Gemeintes, Machtziel.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["subtext", "verborgen", "eigentlich", "status"]) && hasAny(normalized, ["will", "vermeiden", "durchsetzen"]),
+        "Subtext und Macht",
+        "Dialogfunktion ist auf Handlung und Machtdynamik ausgerichtet.",
+        `Dialog${hint} bleibt auf Informationsebene – kein Subtext erkennbar.`,
+        "kompendium",
+        "Pro Figur notieren: Gesagtes (was sie sagt), Gemeintes (was sie wirklich will) und Machtziel (wie sie den Status der anderen beeinflusst). Ein Dialog ohne Subtext ist eine Erklärung – kein Drehbuchdialog.",
+        3
+      ));
       break;
+
     case "scriptExcerpt":
-      checks.push(makeCheck(hasAny(normalized, ["int", "ext", "tag", "nacht", "dialog"]) || /[A-Z]{2,}\s*\n/.test(value), "Formale Skriptlesbarkeit", "Drehbuchformat ist erkennbar.", "Skriptformat ist kaum lesbar.", "wikihow", "Szenenueberschrift + Dialogblock + Handlungszeile sauber trennen.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["int", "ext", "tag", "nacht", "dialog"]) || /[A-Z]{2,}\s*\n/.test(value),
+        "Formale Skriptlesbarkeit",
+        "Drehbuchformat ist erkennbar.",
+        `Skriptformat${hint} ist kaum lesbar – Szenenaufbau unklar.`,
+        "wikihow",
+        "Standard-Aufbau: 'INT./EXT. ORT – TAG/NACHT' → Handlungszeile → FIGURENNAME → 'Dialog.' → Handlungszeile. Szenenkopf, Dialogblock und Handlungszeile sauber trennen.",
+        3
+      ));
       break;
+
     case "modelSceneIntent":
     case "promptPositive":
     case "promptNegative":
     case "sceneInterpretation":
-      checks.push(makeCheck(hasAny(normalized, ["figur", "raum", "licht", "kamera", "emotion", "macht"]), "Modellszene als Interpretation", "Prompt/Interpretation bindet visuelle Bedeutung ein.", "Modellszene bleibt rein dekorativ.", "kompendium", "Prompt an Figurenziel, Raumfunktion und Machtverschiebung koppeln.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["figur", "raum", "licht", "kamera", "emotion", "macht"]),
+        "Modellszene als Interpretation",
+        "Prompt/Interpretation bindet visuelle Bedeutung und Figurendynamik ein.",
+        `Modellszene${hint} bleibt rein dekorativ – kein Figuren- oder Machtbezug.`,
+        "kompendium",
+        "Den Prompt an Figurenziel, Raumfunktion und Machtverschiebung koppeln. Nicht: 'Frau im Kleid'. Sondern: 'Jenny, allein, kleiner im Bild als die Gruppe – Licht von oben, sie im Schatten – Ausdruck: kämpferisch trotz Isolation.'",
+        3
+      ));
       break;
+
     case "modelTool":
-      checks.push(makeCheck(hasAny(normalized, ["leonardo", "playground", "canva", "writerduet", "arc", "tool"]) && hasAny(normalized, ["weil", "damit", "um"]), "Toolentscheidung mit Zweck", "Toolwahl ist zweckgebunden begruendet.", "Toolwahl ist nicht begruendet.", "serienschreiben", "Tool + Produktionszweck + erwartetes Ergebnis in einem Satz verbinden.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["leonardo", "playground", "canva", "writerduet", "arc", "tool"]) && hasAny(normalized, ["weil", "damit", "um"]),
+        "Toolentscheidung mit Zweck",
+        "Toolwahl ist zweckgebunden begründet.",
+        `Toolwahl${hint} ist nicht begründet – warum dieses Tool?`,
+        "serienschreiben",
+        "Tool + Produktionszweck + erwartetes Ergebnis in einem Satz verbinden. Warum gerade dieses Tool für diese Phase? Was produziert ihr damit – und wie passt das zur Serienentwicklung?",
+        3
+      ));
       break;
+
     case "intro":
     case "pitchHook":
-      checks.push(makeCheck(hasAny(normalized, ["these", "relevanz", "warum", "jetzt"]) && words >= 15, "Pitch-Hook", "Einstieg koppelt These und Relevanz.", "Hook ohne klare These/Relevanz.", "kompendium", "In 3 Saetzen bauen: These, Konflikt, Warum jetzt.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["these", "relevanz", "warum", "jetzt"]) && words >= 15,
+        "Pitch-Hook",
+        "Einstieg koppelt These und Relevanz – nimmt die Jury mit.",
+        `Hook${hint} fehlt klare These/Relevanz – oder ist zu kurz.`,
+        "kompendium",
+        "Knöhr zitiert (2025, S. 124) den Kern des Pitchens: jemanden 'mit auf die Reise nehmen – knapp, klar und spannend'. Dein Hook in 3 Sätzen: (1) Die Welt/Das Thema. (2) Der Konflikt der Hauptfigur. (3) Warum das jetzt, 2025, relevant ist.",
+        3
+      ));
       break;
+
     case "worldFigures":
     case "pitchWorldFigures":
-      checks.push(makeCheck(hasAny(normalized, ["hauptfigur", "konflikt", "gesellschaft", "beziehung"]), "Figuren-Welt-Kopplung", "Figuren und Weltkontext sind verbunden.", "Figurenkonflikt im Weltkontext fehlt.", "kompendium", "Hauptfigur + Gegenkraft + gesellschaftliche Norm in einem Block verbinden.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["hauptfigur", "konflikt", "gesellschaft", "beziehung"]),
+        "Figuren-Welt-Kopplung",
+        "Figuren und Weltkontext sind miteinander verbunden.",
+        `Figurenkonflikt im Weltkontext fehlt${hint} – Figuren schweben im luftleeren Raum.`,
+        "kompendium",
+        "Format: '[Figur] lebt in [Welt], wo [Norm/Institution] gilt – das stellt sie vor [Konflikt] gegen [Gegenkraft].' Hauptfigur + Gegenkraft + gesellschaftliche Norm in einem Block verbinden.",
+        3
+      ));
       break;
+
     case "scene":
     case "pitchScene":
-      checks.push(makeCheck(hasAny(normalized, ["szene", "status", "entscheidung", "konsequenz"]), "Szenenbeweis im Pitch", "Beispielszene zeigt den Serienkern.", "Beispielszene belegt den Serienkern noch nicht.", "handbuch", "Szene auf Statuswechsel und Konsequenz zuspitzen.", 3));
+      checks.push(makeCheck(
+        hasAny(normalized, ["szene", "status", "entscheidung", "konsequenz"]),
+        "Szenenbeweis im Pitch",
+        "Beispielszene zeigt den Serienkern in Aktion.",
+        `Beispielszene${hint} belegt den Serienkern noch nicht – kein Konflikt oder Statuswechsel sichtbar.`,
+        "handbuch",
+        "Die Beispielszene ist euer 'Proof of Concept' (Knöhr 2025, S. 146–148): Sie muss zeigen, wie der zentrale Konflikt 'in Bildern' funktioniert. Zuspitzen auf: Wer will was – welcher Statuswechsel passiert – welche Konsequenz folgt daraus?",
+        3
+      ));
       break;
+
     case "juryQuestions":
-      checks.push(makeCheck((value.match(/\?/g) || []).length >= 3 || hasAny(normalized, ["frage 1", "frage 2", "frage 3"]), "Q&A-Vorbereitung", "Mehrere kritische Rueckfragen sind antizipiert.", "Q&A-Vorbereitung zu schmal.", "wikihow", "Mindestens drei kritische Fragen mit je einer belastbaren Antwort schreiben.", 3));
+      checks.push(makeCheck(
+        (value.match(/\?/g) || []).length >= 3 || hasAny(normalized, ["frage 1", "frage 2", "frage 3"]),
+        "Q&A-Vorbereitung",
+        "Mehrere kritische Rückfragen sind antizipiert und vorbereitet.",
+        `Q&A-Vorbereitung${hint} zu schmal – zu wenig kritische Fragen.`,
+        "wikihow",
+        "Mindestens drei kritische Fragen mit je einer belastbaren Antwort schreiben. Typische Juryfragen: 'Warum jetzt?' 'Was unterscheidet euch von anderen Jenny-Adaptionen?' 'Erklärt euren Serienkern in 3 Sätzen.' Übt laut – Knöhr beschreibt (2025, S. 134), wie wichtig die mündliche Pitch-Performance ist.",
+        3
+      ));
       break;
+
     default:
-      checks.push(makeCheck(hasAny(normalized, ["weil", "damit", "deshalb", "folgt", "konsequenz"]), "Begruendungslogik", "Aussagen sind begruendet.", "Begruendungslogik fehlt.", "handbuch", "Zu jeder Kernaussage eine Ursache-Wirkung-Verbindung ergaenzen.", 2));
+      checks.push(makeCheck(
+        hasAny(normalized, ["weil", "damit", "deshalb", "folgt", "konsequenz"]),
+        "Begruendungslogik",
+        "Aussagen sind mit Ursache-Wirkung begründet.",
+        `Begründungslogik fehlt${hint} – Aussagen stehen ohne Kontext.`,
+        "handbuch",
+        "Zu jeder Kernaussage eine Ursache-Wirkung-Verbindung ergänzen: 'Wir tun X, weil Y – und das führt zu Z.' Konkret und überprüfbar formulieren.",
+        2
+      ));
   }
 
   if (["phase", "checkpoint", "pitch"].includes(context)) {
@@ -1903,10 +2243,10 @@ function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words
       makeCheck(
         matchedScript.length >= 1 || hasAny(normalized, ["plot", "struktur", "szene", "dialog"]),
         "Drehbuchhandwerk",
-        `Handwerkliche Begriffe sind eingebettet (${matchedScript.join(", ") || "Plot/Struktur"}).`,
-        "Drehbuchhandwerk bleibt zu implizit.",
+        `Handwerkliche Begriffe eingebettet (${matchedScript.join(", ") || "Plot/Struktur"}).`,
+        "Drehbuchhandwerk bleibt zu implizit – kein Entwicklungsschritt benannt.",
         "filmpuls",
-        "Mindestens einen handwerklichen Schritt (Premisse/Expose/Treatment/Struktur) konkretisieren.",
+        "Mindestens einen handwerklichen Schritt konkretisieren: Premisse, Exposé, Treatment, Plotstruktur oder Outline. In welchem Stadium befindet sich eure Serienentwicklung konkret?",
         2
       )
     );
@@ -1918,9 +2258,9 @@ function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words
         matchedCollab.length >= 1 || hasAny(normalized, ["team", "rolle", "feedback", "abgabe"]),
         "Arbeitskultur",
         "Arbeits- und Abstimmungslogik ist adressiert.",
-        "Produktions- und Abstimmungslogik fehlt.",
+        "Produktions- und Abstimmungslogik fehlt – wer macht was bis wann?",
         "serienschreiben",
-        "Festhalten: Wer arbeitet mit wem bis wann an welchem Zwischenergebnis?",
+        "Festhalten: Wer arbeitet mit wem bis wann an welchem Zwischenergebnis? Knöhr (2025, S. 185) beschreibt 'vielfaches Feedback' als Kern des Serienentwicklungsprozesses.",
         2
       )
     );
@@ -1931,10 +2271,10 @@ function buildFieldSpecificChecks(fieldKey, fieldLabel, value, normalized, words
       makeCheck(
         hasAny(normalized, ["int", "ext", "ort", "zeit", "tag", "nacht", "dialog"]),
         "Inszenierbarkeit",
-        "Szene ist als filmische Handlung lesbar.",
-        "Inszenierbare Angaben (Ort/Zeit/Dialog) fehlen.",
+        "Szene ist als filmische Handlung lesbar (Ort/Zeit/Dialog erkennbar).",
+        "Inszenierbare Angaben (Ort/Zeit/Dialog) fehlen – nicht als Drehbuch lesbar.",
         "wikihow",
-        "Ort, Zeit, Handlung, Dialog klar trennen.",
+        "Ort, Zeit, Handlung, Dialog klar trennen. Jede Szene braucht einen Szenenkopf (INT./EXT.), eine szenische Handlung und – wenn nötig – Dialog.",
         2
       )
     );
